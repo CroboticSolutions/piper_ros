@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="piper">
+
+  <!-- Arguments -->
+  <xacro:arg name="simulation_controllers" default="" />
+
+  <!-- Include Piper description -->
+  <xacro:include filename="$(find piper_description)/urdf/piper_description_gz.xacro"/>
+
+  <!-- Gazebo ros2_control plugin -->
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg simulation_controllers)</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>
