@@ -49,10 +49,19 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "launch_move_group",
+            default_value="true",
+            description="Launch MoveIt move_group node",
+        )
+    )
+
     # Initialize Arguments
     gz_gui = LaunchConfiguration("gz_gui")
     launch_rviz = LaunchConfiguration("launch_rviz")
     world_file = LaunchConfiguration("world_file")
+    launch_move_group = LaunchConfiguration("launch_move_group")
 
     # Get URDF via xacro using Command substitution (like UR does)
     piper_description_path = PathJoinSubstitution(
@@ -164,12 +173,37 @@ def generate_launch_description():
         condition=IfCondition(launch_rviz),
     )
 
+    # MoveIt move_group launch
+    move_group_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare("piper_with_gripper_moveit"),
+                "launch",
+                "move_group.launch.py"
+            ])
+        ),
+        launch_arguments={
+            "use_sim_time": "true"
+        }.items(),
+        condition=IfCondition(launch_move_group),
+    )
+
+    # Delay move_group after arm controller spawns
+    delay_move_group_after_arm_controller = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=arm_controller_spawner,
+            on_exit=[move_group_launch],
+        ),
+        condition=IfCondition(launch_move_group),
+    )
+
     nodes_to_start = [
         robot_state_publisher_node,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster,
         arm_controller_spawner,
         gripper_controller_spawner,
+        delay_move_group_after_arm_controller,
         gz_spawn_entity,
         gz_sim,
         gz_bridge_clock,
