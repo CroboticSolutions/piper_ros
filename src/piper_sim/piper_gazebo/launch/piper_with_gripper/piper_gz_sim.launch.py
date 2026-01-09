@@ -183,7 +183,8 @@ def generate_launch_description():
             ])
         ),
         launch_arguments={
-            "use_sim_time": "true"
+            "use_sim_time": "true",
+            "launch_rviz": "true"
         }.items(),
         condition=IfCondition(launch_move_group),
     )

@@ -15,9 +15,11 @@ from moveit_configs_utils.launch_utils import (
 def generate_launch_description():
     moveit_config = (
         MoveItConfigsBuilder("piper", package_name="piper_with_gripper_moveit")
-        .planning_pipelines(
-            pipelines=["ompl", "pilz_industrial_motion_planner"]
-        )
+        .robot_description_semantic(file_path="config/piper.srdf")
+        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .joint_limits(file_path="config/joint_limits.yaml")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        .planning_pipelines(pipelines=["ompl", "pilz_industrial_motion_planner"])
         .to_moveit_configs()
     )
 
@@ -45,6 +47,9 @@ def generate_launch_description():
         "publish_state_updates": should_publish,
         "publish_transforms_updates": should_publish,
         "monitor_dynamics": False,
+        "trajectory_execution_manager": {
+            "moveit_manage_controllers": False,
+        },
     }
 
     move_group_params = [
@@ -61,7 +66,7 @@ def generate_launch_description():
         output="screen",
         parameters=move_group_params,
     )
-# RViz node
+# RViz node with all necessary configs
     rviz_config_file = PathJoinSubstitution(
         [FindPackageShare("piper_with_gripper_moveit"), "config", "moveit.rviz"]
     )
@@ -75,11 +80,14 @@ def generate_launch_description():
         parameters=[
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.planning_pipelines,
+            moveit_config.joint_limits,
             {"use_sim_time": LaunchConfiguration("use_sim_time")},
         ],
         condition=IfCondition(LaunchConfiguration("launch_rviz")),
     )
     ld.add_action(rviz_node)
 
-    
+    return ld
     return ld
