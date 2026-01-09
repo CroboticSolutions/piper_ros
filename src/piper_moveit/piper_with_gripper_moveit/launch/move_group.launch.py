@@ -1,9 +1,11 @@
 from moveit_configs_utils import MoveItConfigsBuilder
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+from launch_ros.substitutions import FindPackageShare
 from moveit_configs_utils.launch_utils import (
     add_debuggable_node,
     DeclareBooleanLaunchArg,
@@ -11,7 +13,13 @@ from moveit_configs_utils.launch_utils import (
 
 
 def generate_launch_description():
-    moveit_config = MoveItConfigsBuilder("piper", package_name="piper_with_gripper_moveit").to_moveit_configs()
+    moveit_config = (
+        MoveItConfigsBuilder("piper", package_name="piper_with_gripper_moveit")
+        .planning_pipelines(
+            pipelines=["ompl", "pilz_industrial_motion_planner"]
+        )
+        .to_moveit_configs()
+    )
 
     ld = LaunchDescription()
 
@@ -22,6 +30,7 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument("capabilities", default_value=""))
     ld.add_action(DeclareLaunchArgument("disable_capabilities", default_value=""))
     ld.add_action(DeclareBooleanLaunchArg("use_sim_time", default_value=True))
+    ld.add_action(DeclareBooleanLaunchArg("launch_rviz", default_value=True))
 
     should_publish = LaunchConfiguration("publish_monitored_planning_scene")
 
@@ -52,5 +61,25 @@ def generate_launch_description():
         output="screen",
         parameters=move_group_params,
     )
+# RViz node
+    rviz_config_file = PathJoinSubstitution(
+        [FindPackageShare("piper_with_gripper_moveit"), "config", "moveit.rviz"]
+    )
+    
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="log",
+        arguments=["-d", rviz_config_file],
+        parameters=[
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            {"use_sim_time": LaunchConfiguration("use_sim_time")},
+        ],
+        condition=IfCondition(LaunchConfiguration("launch_rviz")),
+    )
+    ld.add_action(rviz_node)
 
+    
     return ld
