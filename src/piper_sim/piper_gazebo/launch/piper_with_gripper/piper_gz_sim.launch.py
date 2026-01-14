@@ -4,6 +4,7 @@ from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
+    OpaqueFunction,
     RegisterEventHandler,
 )
 from launch.conditions import IfCondition
@@ -108,15 +109,32 @@ def generate_launch_description():
         condition=IfCondition(launch_rviz),
     )
 
-    # Gazebo Sim
-    gz_sim = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
-        ),
-        launch_arguments={
-            "gz_args": ["-r -v 4 ", world_file]
-        }.items(),
-    )
+    # Gazebo Sim - conditionally add -s flag for headless mode
+    def get_gz_sim_action(context):
+        gz_gui_val = LaunchConfiguration("gz_gui").perform(context)
+        world_file_val = LaunchConfiguration("world_file").perform(context)
+        
+        # Add -s flag for server-only (headless) mode if GUI is disabled
+        # gz_args must be a string (not a list) for ros_gz_sim launch file
+        if gz_gui_val.lower() == "false":
+            gz_args_str = f"-r -s -v 4 {world_file_val}"
+        else:
+            # When GUI is enabled, use -r to run and specify world file
+            gz_args_str = f"-r -v 4 {world_file_val}"
+        
+        from ament_index_python.packages import get_package_share_directory
+        ros_gz_sim_share = get_package_share_directory("ros_gz_sim")
+        
+        return [IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ros_gz_sim_share, "/launch/gz_sim.launch.py"]
+            ),
+            launch_arguments={
+                "gz_args": gz_args_str,
+            }.items(),
+        )]
+    
+    gz_sim = OpaqueFunction(function=get_gz_sim_action)
 
     # Spawn Entity (same as UR approach)
     gz_spawn_entity = Node(

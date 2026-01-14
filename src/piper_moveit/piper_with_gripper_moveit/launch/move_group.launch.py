@@ -38,8 +38,26 @@ def generate_launch_description():
         "monitor_dynamics": False,
     }
 
+    # Override planning pipelines to exclude CHOMP and STOMP (not available in ROS2 Jazzy)
+    moveit_dict = moveit_config.to_dict()
+    if "planning_pipelines" in moveit_dict:
+        pipelines_list = moveit_dict["planning_pipelines"]
+        # Filter out CHOMP and STOMP planners - keep only allowed ones
+        allowed_pipelines = ["ompl", "pilz_industrial_motion_planner"]
+        if isinstance(pipelines_list, list):
+            # Filter the list to only include allowed planners
+            filtered_pipelines = [p for p in pipelines_list if p in allowed_pipelines]
+            moveit_dict["planning_pipelines"] = filtered_pipelines
+        elif isinstance(pipelines_list, dict):
+            # If it's a dict, filter by keys
+            filtered_pipelines = {k: v for k, v in pipelines_list.items() 
+                                  if k in allowed_pipelines or k in ["planning_pipelines", "default_planning_pipeline"]}
+            if "default_planning_pipeline" not in filtered_pipelines:
+                filtered_pipelines["default_planning_pipeline"] = "ompl"
+            moveit_dict["planning_pipelines"] = filtered_pipelines
+    
     move_group_params = [
-        moveit_config.to_dict(),
+        moveit_dict,
         move_group_configuration,
         {"use_sim_time": LaunchConfiguration("use_sim_time")},
     ]
