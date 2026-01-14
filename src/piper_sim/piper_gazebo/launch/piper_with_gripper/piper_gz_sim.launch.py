@@ -161,6 +161,21 @@ def generate_launch_description():
         output="screen",
     )
 
+    # Camera bridge - bridge camera topics from Gazebo to ROS 2
+    gz_bridge_camera = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/world/piper_world/model/piper/link/camera_link/sensor/camera/image@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/world/piper_world/model/piper/link/camera_link/sensor/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
+        ],
+        remappings=[
+            ("/world/piper_world/model/piper/link/camera_link/sensor/camera/image", "/piper/camera/image_raw"),
+            ("/world/piper_world/model/piper/link/camera_link/sensor/camera/camera_info", "/piper/camera/camera_info"),
+        ],
+        output="screen",
+    )
+
     # Joint State Broadcaster
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -225,6 +240,7 @@ def generate_launch_description():
         gz_spawn_entity,
         gz_sim,
         gz_bridge_clock,
+        gz_bridge_camera,
     ]
 
     return LaunchDescription(declared_arguments + nodes_to_start)

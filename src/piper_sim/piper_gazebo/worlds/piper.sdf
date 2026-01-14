@@ -14,6 +14,12 @@
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands">
     </plugin>
 
+    <!-- Sensors (updates sensors + publishes sensor topics) -->
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+    <!-- optional: render engine selection -->
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
     <!-- Rendering -->
     <scene>
       <ambient>1.0 1.0 1.0</ambient>
