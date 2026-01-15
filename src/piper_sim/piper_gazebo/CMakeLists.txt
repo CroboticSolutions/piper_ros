@@ -25,7 +25,7 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 install(
-  PROGRAMS scripts/joint8_ctrl.py
+  PROGRAMS scripts/joint8_ctrl.py scripts/depth_to_uint16.py scripts/pointcloud_reframe.py
   DESTINATION lib/${PROJECT_NAME}
 )
 if(BUILD_TESTING)

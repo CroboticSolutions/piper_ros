@@ -6,6 +6,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     OpaqueFunction,
     RegisterEventHandler,
+    SetEnvironmentVariable,
 )
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
@@ -151,6 +152,25 @@ def generate_launch_description():
         ],
     )
 
+    # Spawn Beer can model from local model folder
+    beer_can_spawn = Node(
+        package="ros_gz_sim",
+        executable="create",
+        output="screen",
+        arguments=[
+            "-file",
+            "/root/gazebo_models/Beer/model.sdf",
+            "-name",
+            "beer_can",
+            "-x",
+            "0.6",
+            "-y",
+            "0.0",
+            "-z",
+            "0.5",
+        ],
+    )
+
     # Clock bridge
     gz_bridge_clock = Node(
         package="ros_gz_bridge",
@@ -162,18 +182,63 @@ def generate_launch_description():
     )
 
     # Camera bridge - bridge camera topics from Gazebo to ROS 2
+    # Bridge camera topics from Gazebo to ROS 2
+    # NOTE: Gazebo is publishing the active sensor on link6 (see gz topics)
     gz_bridge_camera = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
         arguments=[
-            "/world/piper_world/model/piper/link/camera_link/sensor/camera/image@sensor_msgs/msg/Image@gz.msgs.Image",
-            "/world/piper_world/model/piper/link/camera_link/sensor/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
+            "/world/piper_world/model/piper/link/link6/sensor/camera/image@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/world/piper_world/model/piper/link/link6/sensor/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
+            "/world/piper_world/model/piper/link/link6/sensor/camera/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",
         ],
         remappings=[
-            ("/world/piper_world/model/piper/link/camera_link/sensor/camera/image", "/piper/camera/image_raw"),
-            ("/world/piper_world/model/piper/link/camera_link/sensor/camera/camera_info", "/piper/camera/camera_info"),
+            ("/world/piper_world/model/piper/link/link6/sensor/camera/image", "/piper/camera/image_raw"),
+            ("/world/piper_world/model/piper/link/link6/sensor/camera/camera_info", "/piper/camera/camera_info"),
+            ("/world/piper_world/model/piper/link/link6/sensor/camera/points", "/piper/camera/points"),
         ],
         output="screen",
+    )
+
+    # Use ros_gz_image for depth images to avoid encoding corruption
+    gz_bridge_depth = Node(
+        package="ros_gz_image",
+        executable="image_bridge",
+        arguments=[
+            "/world/piper_world/model/piper/link/link6/sensor/camera/depth_image",
+        ],
+        remappings=[
+            ("/world/piper_world/model/piper/link/link6/sensor/camera/depth_image", "/piper/camera/depth/image_raw"),
+        ],
+        output="screen",
+    )
+
+    # Bridge publishes sensor frames; add TFs so RViz can transform point clouds
+    camera_frame_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "camera_link", "piper/camera_link/camera"],
+    )
+
+    pointcloud_reframe_node = Node(
+        package="piper_gazebo",
+        executable="pointcloud_reframe.py",
+        output="screen",
+        parameters=[
+            {"input_topic": "/piper/camera/points"},
+            {"output_topic": "/piper/camera/points_reframed"},
+            {"frame_id": "piper/camera_link/camera"},
+        ],
+    )
+
+    depth_uint16_node = Node(
+        package="piper_gazebo",
+        executable="depth_to_uint16.py",
+        output="screen",
+        parameters=[
+            {"input_topic": "/piper/camera/depth/image_raw"},
+            {"output_topic": "/piper/camera/depth/image_raw_uint16"},
+        ],
     )
 
     # Joint State Broadcaster
@@ -231,16 +296,25 @@ def generate_launch_description():
     )
 
     nodes_to_start = [
+        SetEnvironmentVariable(
+            name="GZ_SIM_RESOURCE_PATH",
+            value="/root/gazebo_models:${GZ_SIM_RESOURCE_PATH}",
+        ),
         robot_state_publisher_node,
+        camera_frame_tf,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster,
         arm_controller_spawner,
         gripper_controller_spawner,
         delay_move_group_after_arm_controller,
         gz_spawn_entity,
+        beer_can_spawn,
         gz_sim,
         gz_bridge_clock,
         gz_bridge_camera,
+        gz_bridge_depth,
+        depth_uint16_node,
+        pointcloud_reframe_node,
     ]
 
     return LaunchDescription(declared_arguments + nodes_to_start)
