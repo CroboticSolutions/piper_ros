@@ -10,7 +10,7 @@ class PointCloudReframe(Node):
         super().__init__("pointcloud_reframe")
         self.declare_parameter("input_topic", "/piper/camera/points")
         self.declare_parameter("output_topic", "/piper/camera/points_reframed")
-        self.declare_parameter("frame_id", "piper/camera_link/camera")
+        self.declare_parameter("frame_id", "camera_link")
 
         input_topic = self.get_parameter("input_topic").get_parameter_value().string_value
         output_topic = self.get_parameter("output_topic").get_parameter_value().string_value
@@ -20,18 +20,9 @@ class PointCloudReframe(Node):
         self.pub = self.create_publisher(PointCloud2, output_topic, 10)
 
     def cb(self, msg: PointCloud2):
-        out = PointCloud2()
-        out.header = msg.header
-        out.header.frame_id = self.frame_id
-        out.height = msg.height
-        out.width = msg.width
-        out.fields = msg.fields
-        out.is_bigendian = msg.is_bigendian
-        out.point_step = msg.point_step
-        out.row_step = msg.row_step
-        out.data = msg.data
-        out.is_dense = msg.is_dense
-        self.pub.publish(out)
+        msg.header.frame_id = self.frame_id
+        self.pub.publish(msg)
+
 
 
 def main():

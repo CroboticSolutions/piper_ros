@@ -18,6 +18,7 @@ from launch.substitutions import (
     PathJoinSubstitution,
 )
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -85,7 +86,7 @@ def generate_launch_description():
         ]
     )
 
-    robot_description = {"robot_description": robot_description_content}
+    robot_description = {"robot_description": ParameterValue(robot_description_content, value_type=str)}
 
     # Robot State Publisher
     robot_state_publisher_node = Node(
@@ -152,72 +153,78 @@ def generate_launch_description():
         ],
     )
 
-    # Spawn Beer can model from local model folder
-    beer_can_spawn = Node(
+    # Spawn Coke model from local model folder
+    coke_spawn = Node(
         package="ros_gz_sim",
         executable="create",
         output="screen",
         arguments=[
             "-file",
-            "/root/gazebo_models/Beer/model.sdf",
+            "/root/gazebo_models/Coke/model.sdf",
             "-name",
-            "beer_can",
+            "coke",
             "-x",
             "0.6",
             "-y",
+            "-0.15",
+            "-z",
+            "10",
+        ],
+    )
+
+    # Spawn Banana model from local model folder
+    banana_spawn = Node(
+        package="ros_gz_sim",
+        executable="create",
+        output="screen",
+        arguments=[
+            "-file",
+            "/root/gazebo_models/Banana for Scale/model.sdf",
+            "-name",
+            "banana",
+            "-x",
+            "0.5",
+            "-y",
+            "0.15",
+            "-z",
+            "10",
+        ],
+    )
+
+    # Spawn ArUco Marker model
+    aruco_marker_spawn = Node(
+        package="ros_gz_sim",
+        executable="create",
+        output="screen",
+        arguments=[
+            "-file",
+            "/root/gazebo_models/ArUco_Marker_5x5_1000_0/model.sdf",
+            "-name",
+            "aruco_marker",
+            "-x",
+            "0.2",
+            "-y",
             "0.0",
             "-z",
-            "0.5",
+            "0.01",  # Increased z to ensure it's above ground
         ],
     )
 
-    # Clock bridge
-    gz_bridge_clock = Node(
+
+    bridge_config = PathJoinSubstitution(
+        [FindPackageShare("piper_gazebo"), "config", "piper_gz_bridge.yaml"]
+    )
+
+    gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        arguments=[
-            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
-        ],
         output="screen",
-    )
-
-    # Camera bridge - bridge camera topics from Gazebo to ROS 2
-    # Bridge camera topics from Gazebo to ROS 2
-    # NOTE: Gazebo is publishing the active sensor on link6 (see gz topics)
-    gz_bridge_camera = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        arguments=[
-            "/world/piper_world/model/piper/link/link6/sensor/camera/image@sensor_msgs/msg/Image@gz.msgs.Image",
-            "/world/piper_world/model/piper/link/link6/sensor/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
-            "/world/piper_world/model/piper/link/link6/sensor/camera/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",
-        ],
-        remappings=[
-            ("/world/piper_world/model/piper/link/link6/sensor/camera/image", "/piper/camera/image_raw"),
-            ("/world/piper_world/model/piper/link/link6/sensor/camera/camera_info", "/piper/camera/camera_info"),
-            ("/world/piper_world/model/piper/link/link6/sensor/camera/points", "/piper/camera/points"),
-        ],
-        output="screen",
-    )
-
-    # Use ros_gz_image for depth images to avoid encoding corruption
-    gz_bridge_depth = Node(
-        package="ros_gz_image",
-        executable="image_bridge",
-        arguments=[
-            "/world/piper_world/model/piper/link/link6/sensor/camera/depth_image",
-        ],
-        remappings=[
-            ("/world/piper_world/model/piper/link/link6/sensor/camera/depth_image", "/piper/camera/depth/image_raw"),
-        ],
-        output="screen",
-    )
-
-    # Bridge publishes sensor frames; add TFs so RViz can transform point clouds
-    camera_frame_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "camera_link", "piper/camera_link/camera"],
+        parameters=[{
+            "config_file": bridge_config,
+            # optional:
+            # "expand_gz_topic_names": False,
+            # "override_timestamps_with_wall_time": False,
+        }],
     )
 
     pointcloud_reframe_node = Node(
@@ -227,7 +234,7 @@ def generate_launch_description():
         parameters=[
             {"input_topic": "/piper/camera/points"},
             {"output_topic": "/piper/camera/points_reframed"},
-            {"frame_id": "piper/camera_link/camera"},
+            {"frame_id": "camera_link"},
         ],
     )
 
@@ -301,18 +308,17 @@ def generate_launch_description():
             value="/root/gazebo_models:${GZ_SIM_RESOURCE_PATH}",
         ),
         robot_state_publisher_node,
-        camera_frame_tf,
         joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster,
         arm_controller_spawner,
         gripper_controller_spawner,
         delay_move_group_after_arm_controller,
         gz_spawn_entity,
-        beer_can_spawn,
+        coke_spawn,
+        banana_spawn,
+        aruco_marker_spawn,
         gz_sim,
-        gz_bridge_clock,
-        gz_bridge_camera,
-        gz_bridge_depth,
+        gz_bridge,
         depth_uint16_node,
         pointcloud_reframe_node,
     ]

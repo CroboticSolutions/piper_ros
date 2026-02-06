@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <unit name="meter" meter="1"/>
+    <up_axis>Z_UP</up_axis>
+  </asset>
+  <library_images>
+    <image id="wood_texture" name="wood_texture">
+      <init_from>../materials/textures/wood_texture.png</init_from>
+    </image>
+  </library_images>
+  <library_materials>
+    <material id="wood_material" name="wood_material">
+      <instance_effect url="#wood_effect"/>
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="wood_effect">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color>0 0 0 1</color>
+            </emission>
+            <ambient>
+              <color>1 1 1 1</color>
+            </ambient>
+            <diffuse>
+              <texture texture="wood_texture" texcoord="UVSET0"/>
+            </diffuse>
+            <specular>
+              <color>0.1 0.1 0.1 1</color>
+            </specular>
+            <shininess>
+              <float>10</float>
+            </shininess>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="floor_geometry" name="floor_geometry">
+      <mesh>
+        <source id="floor_positions">
+          <float_array id="floor_positions_array" count="12">
+            -50 -50 0  50 -50 0  50 50 0  -50 50 0
+          </float_array>
+          <technique_common>
+            <accessor source="#floor_positions_array" count="4" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="floor_uvs">
+          <float_array id="floor_uvs_array" count="8">
+            0 0  20 0  20 20  0 20
+          </float_array>
+          <technique_common>
+            <accessor source="#floor_uvs_array" count="4" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="floor_vertices">
+          <input semantic="POSITION" source="#floor_positions"/>
+        </vertices>
+        <triangles count="2" material="wood_material">
+          <input semantic="VERTEX" source="#floor_vertices" offset="0"/>
+          <input semantic="TEXCOORD" source="#floor_uvs" offset="1" set="0"/>
+          <p>0 0 1 1 2 2 0 0 2 2 3 3</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="Scene" name="Scene">
+      <node id="floor_node" name="floor_node">
+        <instance_geometry url="#floor_geometry">
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="wood_material" target="#wood_material">
+                <bind_vertex_input semantic="UVSET0" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_geometry>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene"/>
+  </scene>
+</COLLADA>

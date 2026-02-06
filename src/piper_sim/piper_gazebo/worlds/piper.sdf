@@ -3,8 +3,14 @@
   <world name="piper_world">
 
     <!-- Physics -->
+    <physics name="1ms" type="ignition.physics.sim" default="true">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
+    <gravity>0 0 -9.81</gravity>
     </plugin>
+   
 
     <!-- Scene -->
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster">
@@ -48,23 +54,26 @@
       <link name="link">
         <collision name="collision">
           <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
+            <box>
+              <size>100 100 0.01</size>
+            </box>
           </geometry>
+          <pose>0 0 -0.005 0 0 0</pose>
         </collision>
         <visual name="visual">
           <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
+            <box>
+              <size>5 5 0.01</size>
+            </box>
           </geometry>
+          <pose>0 0 -0.005 0 0 0</pose>
           <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-            <specular>0.8 0.8 0.8 1</specular>
+            <diffuse>1 1 1 1</diffuse>
+            <pbr>
+              <metal>
+                <albedo_map>file:///root/arms_ws/install/piper_gazebo/share/piper_gazebo/materials/textures/wood_texture.png</albedo_map>
+              </metal>
+            </pbr>
           </material>
         </visual>
       </link>

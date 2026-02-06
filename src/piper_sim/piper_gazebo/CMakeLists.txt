@@ -21,11 +21,11 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 install(
-  DIRECTORY launch config scripts worlds urdf
+  DIRECTORY launch config scripts worlds urdf materials meshes
   DESTINATION share/${PROJECT_NAME}
 )
 install(
-  PROGRAMS scripts/joint8_ctrl.py scripts/depth_to_uint16.py scripts/pointcloud_reframe.py
+  PROGRAMS scripts/joint8_ctrl.py scripts/pointcloud_reframe.py
   DESTINATION lib/${PROJECT_NAME}
 )
 if(BUILD_TESTING)

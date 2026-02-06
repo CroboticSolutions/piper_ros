@@ -1,0 +1,16 @@
+material WoodFloor
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        // Relative to the location of the material script
+        texture ../textures/wood_texture.jpg
+        // Scale the texture to repeat across the floor
+        scale 0.01 0.01
+      }
+    }
+  }
+}
