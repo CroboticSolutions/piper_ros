@@ -4,10 +4,8 @@ from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
-    OpaqueFunction,
     RegisterEventHandler,
     SetEnvironmentVariable,
-    TimerAction,
 )
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
@@ -61,29 +59,11 @@ def generate_launch_description():
         )
     )
 
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            "controller_spawn_delay",
-            default_value="15.0",
-            description="Seconds to wait after piper spawn before starting controller spawners (gz_ros2_control init time)",
-        )
-    )
-
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            "controller_manager_name",
-            default_value="/piper/controller_manager",
-            description="Controller manager node name (gz_ros2_control often uses /<model_name>/controller_manager)",
-        )
-    )
-
     # Initialize Arguments
     gz_gui = LaunchConfiguration("gz_gui")
     launch_rviz = LaunchConfiguration("launch_rviz")
     world_file = LaunchConfiguration("world_file")
     launch_move_group = LaunchConfiguration("launch_move_group")
-    controller_spawn_delay = LaunchConfiguration("controller_spawn_delay", default="15.0")
-    controller_manager_name = LaunchConfiguration("controller_manager_name", default="/piper/controller_manager")
 
     # Get URDF via xacro using Command substitution (like UR does)
     piper_description_path = PathJoinSubstitution(
@@ -130,32 +110,15 @@ def generate_launch_description():
         condition=IfCondition(launch_rviz),
     )
 
-    # Gazebo Sim - conditionally add -s flag for headless mode
-    def get_gz_sim_action(context):
-        gz_gui_val = LaunchConfiguration("gz_gui").perform(context)
-        world_file_val = LaunchConfiguration("world_file").perform(context)
-        
-        # Add -s flag for server-only (headless) mode if GUI is disabled
-        # gz_args must be a string (not a list) for ros_gz_sim launch file
-        if gz_gui_val.lower() == "false":
-            gz_args_str = f"-r -s -v 4 {world_file_val}"
-        else:
-            # When GUI is enabled, use -r to run and specify world file
-            gz_args_str = f"-r -v 4 {world_file_val}"
-        
-        from ament_index_python.packages import get_package_share_directory
-        ros_gz_sim_share = get_package_share_directory("ros_gz_sim")
-        
-        return [IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [ros_gz_sim_share, "/launch/gz_sim.launch.py"]
-            ),
-            launch_arguments={
-                "gz_args": gz_args_str,
-            }.items(),
-        )]
-    
-    gz_sim = OpaqueFunction(function=get_gz_sim_action)
+    # Gazebo Sim
+    gz_sim = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
+        ),
+        launch_arguments={
+            "gz_args": ["-r -v 4 ", world_file]
+        }.items(),
+    )
 
     # Spawn Entity (same as UR approach)
     gz_spawn_entity = Node(
@@ -225,25 +188,19 @@ def generate_launch_description():
             "-y",
             "0.0",
             "-z",
-            "0.01",  # Increased z to ensure it's above ground
+            "0.01",
         ],
     )
 
-
+    # Bridge (topics from piper_gz_bridge.yaml, typically includes /clock and others)
     bridge_config = PathJoinSubstitution(
         [FindPackageShare("piper_gazebo"), "config", "piper_gz_bridge.yaml"]
     )
-
     gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
         output="screen",
-        parameters=[{
-            "config_file": bridge_config,
-            # optional:
-            # "expand_gz_topic_names": False,
-            # "override_timestamps_with_wall_time": False,
-        }],
+        parameters=[{"config_file": bridge_config}],
     )
 
     pointcloud_reframe_node = Node(
@@ -257,48 +214,25 @@ def generate_launch_description():
         ],
     )
 
-
-
     # Joint State Broadcaster
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", controller_manager_name],
-        parameters=[{"use_sim_time": True}],
+        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
 
     # Arm Controller
     arm_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["arm_controller", "--controller-manager", controller_manager_name],
-        parameters=[{"use_sim_time": True}],
+        arguments=["arm_controller", "--controller-manager", "/controller_manager"],
     )
 
     # Gripper Controller
     gripper_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["gripper_controller", "--controller-manager", controller_manager_name],
-        parameters=[{"use_sim_time": True}],
-    )
-
-    # Start controller spawners only after piper is spawned, then wait for gz_ros2_control to bring up controller_manager
-    # gz_ros2_control initializes asynchronously; delay ensures controller_manager services are available
-    spawners_after_piper = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=gz_spawn_entity,
-            on_exit=[
-                TimerAction(
-                    period=controller_spawn_delay,
-                    actions=[
-                        joint_state_broadcaster_spawner,
-                        arm_controller_spawner,
-                        gripper_controller_spawner,
-                    ],
-                ),
-            ],
-        ),
+        arguments=["gripper_controller", "--controller-manager", "/controller_manager"],
     )
 
     # Delay RViz after joint_state_broadcaster
@@ -340,8 +274,10 @@ def generate_launch_description():
             value="/root/gazebo_models:${GZ_SIM_RESOURCE_PATH}",
         ),
         robot_state_publisher_node,
-        spawners_after_piper,
+        joint_state_broadcaster_spawner,
         delay_rviz_after_joint_state_broadcaster,
+        arm_controller_spawner,
+        gripper_controller_spawner,
         delay_move_group_after_arm_controller,
         gz_spawn_entity,
         coke_spawn,
