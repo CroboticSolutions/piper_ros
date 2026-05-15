@@ -36,7 +36,19 @@ ros2 launch piper_gazebo piper_gazebo.launch.py
 ros2 launch piper_gazebo piper_no_gripper_gazebo.launch.py
 ```
 
-**Note:** If controlling via MoveIt, you must start Gazebo first, then MoveIt. Also, use `piper_moveit.launch.py` instead of `demo.launch.py`.
+**Note:** `ros2 launch <pkg> <name>` resolves files by basename under the package share tree only (no `subdir/` prefixes). Launch files installed under `share/piper_gazebo/launch/piper_with_gripper/` are still invoked as `piper_gazebo.launch.py`, `piper_gz_sim.launch.py`, etc.
+
+### 1.3 Gazebo Sim (ros_gz, optional)
+
+Requires `ros_gz_sim`, `ros_gz_bridge`, and Gazebo Sim matching your ROS distro.
+
+By default this matches the **no-gripper** robot and the same MoveIt + `config/moveit.rviz` layout as `ros2 launch piper_no_gripper_moveit demo.launch.py` (on humble and this branch those `moveit.rviz` files are identical). For **gripper sim + `piper_with_gripper_moveit`**, pass `no_gripper:=false`.
+
+```bash
+ros2 launch piper_gazebo piper_gz_sim.launch.py launch_rviz:=true
+```
+
+**Note:** Classic Gazebo + MoveIt: start Gazebo first; use `piper_moveit.launch.py`, not `demo.launch.py`. With `piper_gz_sim.launch.py`, simulation and MoveIt are started together.
 
 ## 2 Mujoco Simulation
 

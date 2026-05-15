@@ -36,7 +36,20 @@ ros2 launch piper_gazebo piper_gazebo.launch.py
 ros2 launch piper_gazebo piper_no_gripper_gazebo.launch.py
 ```
 
-注：**若通过moveit控制时需要先启动gazebo，再启动moveit，并且使用piper_moveit.launch.py而不是demo.launch.py**
+注：`ros2 launch <包名> <文件名>` 只按**文件名**在包的 share 目录下查找，不能用 `piper_with_gripper/` 这类子路径；文件安装子目录仍为 `piper_gazebo.launch.py`、`piper_gz_sim.launch.py` 等形式调用。
+
+### 1.3 Gazebo Sim（ros_gz，可选）
+
+依赖 `ros_gz_sim`、`ros_gz_bridge` 及对应发行版的 Gazebo Sim。
+
+默认与 **无夹爪** 真机一致：`piper_no_gripper_moveit` 的 SRDF、控制器与 `config/moveit.rviz`，与 `ros2 launch piper_no_gripper_moveit demo.launch.py` 相同（humble 与本分支的 `moveit.rviz` 内容一致）。若要 **有夹爪仿真 + `piper_with_gripper_moveit`**，请加 `no_gripper:=false`。
+
+```bash
+ros2 launch piper_gazebo piper_gz_sim.launch.py launch_rviz:=true
+```
+
+注：使用传统 Gazebo + MoveIt 时，须先启 Gazebo，并配合 `piper_moveit.launch.py` 而非 `demo.launch.py`。使用 `piper_gz_sim.launch.py` 时，仿真与 Moveit 在同一 launch 中启动。
+
 
 ## 2 mujoco仿真
 

@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<!--
+  Piper + OAK-D-SR fragments (included via xacro:include from piper_description_*_gz.xacro).
+
+  Outer <robot> wrapper is stripped by xacro; only macros and nested includes apply.
+
+  Calibration: ~/.ros/hand_eye_calibration.yaml (eye-in-hand: link6 → oak_right_camera_optical_frame).
+
+  Mount pose is solved so the full kinematic chain matches the YAML calibration:
+    T(link6→optical) = T_yaml  = T(mount: link6→oak-d-base-frame) × T_nominal(OAK-D-SR right cam)
+
+  where T_nominal = trans(0,-0.01,0) × rot(rpy = -π/2, 0, -π/2 intrinsic xyz, same convention as depthai_macro).
+
+  If you save a NEW calibration or change camera_model, recreate the fixed joint numeric values this way.
+
+  Values below match ~/.ros/hand_eye_calibration.yaml on this workspace (tracking_base=oak_right_camera_optical_frame).
+  Still do not run hand_eye_calibration/publish.launch simultaneously (duplicate TF).
+
+  Corrected link6 → oak-d-base-frame (REP-103 URDF roll-pitch-yaw = intrinsic XYZ, same as depthai_joint rpy fields):
+    xyz = -0.068133439 0.007721162 0.055194547
+    rpy = +0.17430916 -1.23276438 -0.22762161
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_oak_attachment_defs">
+  <xacro:include filename="$(find depthai_descriptions)/urdf/include/depthai_macro.urdf.xacro"/>
+
+  <xacro:macro name="piper_mount_oak_d_sr_handeye" params="parent_link simulation:=false oak_gazebo_rgbd_sensor:=false">
+    <link name="oak-d-base-frame"/>
+    <joint name="piper_hand_eye_link6_mount" type="fixed">
+      <origin
+        xyz="-0.068133439 0.007721162 0.055194547"
+        rpy="0.17430916 -1.23276438 -0.22762161"/>
+      <parent link="${parent_link}" />
+      <child link="oak-d-base-frame" />
+    </joint>
+
+    <xacro:depthai_camera
+      camera_name="oak"
+      parent="oak-d-base-frame"
+      camera_model="OAK-D-SR"
+      base_frame="oak-d_frame"
+      cam_pos_x="0.0"
+      cam_pos_y="0.0"
+      cam_pos_z="0.0"
+      cam_roll="0.0"
+      cam_pitch="0.0"
+      cam_yaw="0.0"
+      simulation="${simulation}"
+      rs_compat="false"/>
+
+    <xacro:if value="${oak_gazebo_rgbd_sensor}">
+    <gazebo reference="oak_right_camera_frame">
+      <sensor name="camera" type="rgbd_camera">
+        <camera>
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <depth_camera>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R_FLOAT32</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>10.0</far>
+          </clip>
+          <point_cloud>true</point_cloud>
+        </depth_camera>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+        <visualize>true</visualize>
+      </sensor>
+    </gazebo>
+    </xacro:if>
+  </xacro:macro>
+</robot>

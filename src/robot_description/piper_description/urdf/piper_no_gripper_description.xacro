@@ -2,6 +2,7 @@
 <robot
   name="piper"
   xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find piper_description)/urdf/include/piper_oak_d_sr_handeye_macros.xacro"/>
 <!-- world -->
   <link name="world"/>
   <joint name="fixed_base_joint" type="fixed">
@@ -336,6 +337,7 @@
       effort="100"
       velocity="5" />
   </joint>
+  <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="false" oak_gazebo_rgbd_sensor="false"/>
 
 <!-- controller -->
   <xacro:macro name="transmission_block" params="tran_name joint_name motor_name">
