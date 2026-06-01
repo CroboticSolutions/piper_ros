@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!--
+  Piper + OAK-D-PRO / OAK-D-PRO-W (depthai_ros_driver_v3 uses OAK-D-PRO URDF frames).
+
+  Calibration: eye-in-hand link6 → oak_rgb_camera_optical_frame.
+
+  Hand-eye estimate (link6→oak_rgb_camera_optical_frame): tx ty tz qx qy qz qw =
+    -0.0923 0.0028 0.0757 0.1189 -0.1255 0.7097 -0.6830
+
+  link6 → oak-d-base-frame (REP-103 URDF roll-pitch-yaw = intrinsic XYZ):
+    xyz = -0.092300000 0.002800000 0.075700000
+    rpy = 0.007829303 -1.223299500 -0.046167394
+
+  Do not run depthai driver with i_publish_tf_from_calibration or publish_description when
+  using this macro — Piper robot_state_publisher owns the camera TF tree.
+
+  Re-calibrate with hand_eye_calibration when the physical camera or mount changes.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_oak_d_pro_w_attachment_defs">
+  <xacro:include filename="$(find depthai_descriptions_v3)/urdf/include/depthai_macro.urdf.xacro"/>
+
+  <xacro:macro name="piper_mount_oak_d_pro_w_handeye" params="parent_link simulation:=false oak_visual_mesh:=true">
+    <link name="oak-d-base-frame"/>
+    <joint name="piper_hand_eye_link6_mount" type="fixed">
+      <origin
+        xyz="-0.092300000 0.002800000 0.075700000"
+        rpy="0.007829303 -1.223299500 -0.046167394"/>
+      <parent link="${parent_link}"/>
+      <child link="oak-d-base-frame"/>
+    </joint>
+
+    <xacro:if value="${oak_visual_mesh}">
+      <xacro:depthai_camera
+        camera_name="oak"
+        parent="oak-d-base-frame"
+        camera_model="OAK-D-PRO"
+        base_frame="oak-d_frame"
+        cam_pos_x="0.0"
+        cam_pos_y="0.0"
+        cam_pos_z="0.0"
+        cam_roll="0.0"
+        cam_pitch="0.0"
+        cam_yaw="0.0"
+        simulation="${simulation}"
+        rs_compat="false"
+        a="0.0"/>
+    </xacro:if>
+
+    <xacro:unless value="${oak_visual_mesh}">
+      <xacro:property name="oak_pro_pi" value="3.1415926535897931"/>
+      <xacro:property name="oak_pro_baseline" value="0.075"/>
+      <link name="oak-d_frame"/>
+      <joint name="oak_center_joint" type="fixed">
+        <parent link="oak-d-base-frame"/>
+        <child link="oak-d_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_rgb_camera_frame"/>
+      <joint name="oak_rgb_camera_joint" type="fixed">
+        <parent link="oak-d_frame"/>
+        <child link="oak_rgb_camera_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_rgb_camera_optical_frame"/>
+      <joint name="oak_rgb_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-${oak_pro_pi/2} 0 -${oak_pro_pi/2}"/>
+        <parent link="oak_rgb_camera_frame"/>
+        <child link="oak_rgb_camera_optical_frame"/>
+      </joint>
+      <link name="oak_left_camera_frame"/>
+      <joint name="oak_left_camera_joint" type="fixed">
+        <parent link="oak-d_frame"/>
+        <child link="oak_left_camera_frame"/>
+        <origin xyz="0 ${oak_pro_baseline/2} 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_left_camera_optical_frame"/>
+      <joint name="oak_left_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-${oak_pro_pi/2} 0 -${oak_pro_pi/2}"/>
+        <parent link="oak_left_camera_frame"/>
+        <child link="oak_left_camera_optical_frame"/>
+      </joint>
+      <link name="oak_right_camera_frame"/>
+      <joint name="oak_right_camera_joint" type="fixed">
+        <parent link="oak-d_frame"/>
+        <child link="oak_right_camera_frame"/>
+        <origin xyz="0 -${oak_pro_baseline/2} 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_right_camera_optical_frame"/>
+      <joint name="oak_right_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-${oak_pro_pi/2} 0 -${oak_pro_pi/2}"/>
+        <parent link="oak_right_camera_frame"/>
+        <child link="oak_right_camera_optical_frame"/>
+      </joint>
+      <link name="oak_imu_frame"/>
+      <joint name="oak_imu_joint" type="fixed">
+        <parent link="oak-d_frame"/>
+        <child link="oak_imu_frame"/>
+        <origin xyz="-0.008 -0.037945 -0.00079" rpy="${oak_pro_pi} ${oak_pro_pi/2} 0"/>
+      </joint>
+    </xacro:unless>
+  </xacro:macro>
+</robot>

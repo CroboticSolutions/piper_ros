@@ -532,6 +532,21 @@
       friction="0" />
   </joint>
 
+  <!-- MoveIt / arm_api2 TCP: tool tip offset from gripper_base (+Z), 241.1 mm. -->
+  <xacro:property name="arm_tcp_xyz" value="0 0 0.2411"/>
+  <link name="arm_tcp">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.001" />
+      <inertia ixx="1e-9" ixy="0" ixz="0" iyy="1e-9" iyz="0" izz="1e-9" />
+    </inertial>
+  </link>
+  <joint name="arm_tcp_joint" type="fixed">
+    <origin xyz="${arm_tcp_xyz}" rpy="0 0 0" />
+    <parent link="gripper_base" />
+    <child link="arm_tcp" />
+  </joint>
+
   <gazebo reference="base_link">
       <selfCollide>false</selfCollide>
   </gazebo>

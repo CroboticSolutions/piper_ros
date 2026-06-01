@@ -13,26 +13,36 @@
 
   If you save a NEW calibration or change camera_model, recreate the fixed joint numeric values this way.
 
-  Values below match ~/.ros/hand_eye_calibration.yaml on this workspace (tracking_base=oak_right_camera_optical_frame).
+  Updated from saved YAML (handeye_depthai_mount_args / same T_mount math).
+  piper_description.xacro passes oak_visual_mesh:=false for MoveIt/RViz (no depthai STL mesh; TF unchanged).
+
   Still do not run hand_eye_calibration/publish.launch simultaneously (duplicate TF).
 
-  Corrected link6 → oak-d-base-frame (REP-103 URDF roll-pitch-yaw = intrinsic XYZ, same as depthai_joint rpy fields):
-    xyz = -0.068133439 0.007721162 0.055194547
-    rpy = +0.17430916 -1.23276438 -0.22762161
+  Hand-eye estimate (link6→oak_right_camera_optical_frame): tx ty tz qx qy qz qw =
+    -0.0916 -0.0015 0.0632 0.1157 -0.1322 0.7206 -0.6708
+
+  link6 → oak-d-base-frame (REP-103 URDF roll-pitch-yaw = intrinsic XYZ):
+    xyz = -0.090866253 0.008472480 0.063306116
+    rpy = 0.030685051 -1.217622058 -0.102237087
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_oak_attachment_defs">
   <xacro:include filename="$(find depthai_descriptions)/urdf/include/depthai_macro.urdf.xacro"/>
 
-  <xacro:macro name="piper_mount_oak_d_sr_handeye" params="parent_link simulation:=false oak_gazebo_rgbd_sensor:=false">
+  <!--
+    oak_visual_mesh=false: same TF tree as depthai OAK-D-SR but skip STL mesh on oak_model_origin (lighter RViz/MoveIt).
+    Defaults true for Gazebo / users who want the visual housing.
+  -->
+  <xacro:macro name="piper_mount_oak_d_sr_handeye" params="parent_link simulation:=false oak_gazebo_rgbd_sensor:=false oak_visual_mesh:=true">
     <link name="oak-d-base-frame"/>
     <joint name="piper_hand_eye_link6_mount" type="fixed">
       <origin
-        xyz="-0.068133439 0.007721162 0.055194547"
-        rpy="0.17430916 -1.23276438 -0.22762161"/>
+        xyz="-0.090866253 0.008472480 0.063306116"
+        rpy="0.030685051 -1.217622058 -0.102237087"/>
       <parent link="${parent_link}" />
       <child link="oak-d-base-frame" />
     </joint>
 
+    <xacro:if value="${oak_visual_mesh}">
     <xacro:depthai_camera
       camera_name="oak"
       parent="oak-d-base-frame"
@@ -46,6 +56,43 @@
       cam_yaw="0.0"
       simulation="${simulation}"
       rs_compat="false"/>
+    </xacro:if>
+
+    <!-- Mirrors depthai base_macro + OAK-D-SR stereo branch; omits oak_model_origin mesh link -->
+    <xacro:unless value="${oak_visual_mesh}">
+      <xacro:property name="oak_sr_pi" value="3.1415926535897931"/>
+      <xacro:property name="oak_sr_half_base" value="0.01"/>
+      <link name="oak-d_frame"/>
+      <joint name="oak_center_joint" type="fixed">
+        <parent link="oak-d-base-frame"/>
+        <child link="oak-d_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_left_camera_frame"/>
+      <joint name="oak_left_camera_joint" type="fixed">
+        <parent link="oak-d_frame"/>
+        <child link="oak_left_camera_frame"/>
+        <origin xyz="0 ${oak_sr_half_base} 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_left_camera_optical_frame"/>
+      <joint name="oak_left_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-${oak_sr_pi/2} 0 -${oak_sr_pi/2}"/>
+        <parent link="oak_left_camera_frame"/>
+        <child link="oak_left_camera_optical_frame"/>
+      </joint>
+      <link name="oak_right_camera_frame"/>
+      <joint name="oak_right_camera_joint" type="fixed">
+        <parent link="oak-d_frame"/>
+        <child link="oak_right_camera_frame"/>
+        <origin xyz="0 -${oak_sr_half_base} 0" rpy="0 0 0"/>
+      </joint>
+      <link name="oak_right_camera_optical_frame"/>
+      <joint name="oak_right_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-${oak_sr_pi/2} 0 -${oak_sr_pi/2}"/>
+        <parent link="oak_right_camera_frame"/>
+        <child link="oak_right_camera_optical_frame"/>
+      </joint>
+    </xacro:unless>
 
     <xacro:if value="${oak_gazebo_rgbd_sensor}">
     <gazebo reference="oak_right_camera_frame">

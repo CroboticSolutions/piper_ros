@@ -21,7 +21,10 @@ def generate_launch_description():
     ld.add_action(DeclareBooleanLaunchArg("publish_monitored_planning_scene", default_value=True))
     ld.add_action(DeclareLaunchArgument("capabilities", default_value=""))
     ld.add_action(DeclareLaunchArgument("disable_capabilities", default_value=""))
-    ld.add_action(DeclareBooleanLaunchArg("use_sim_time", default_value=True))
+    # Default false: demo.launch.py uses fake ros2_control + RViz without /clock; move_group must
+    # agree with moveit_rviz.launch.py (also defaults false) or TF/planning scene diverges and
+    # MotionPlanning interactive markers fail. Gazebo passes use_sim_time:=true explicitly.
+    ld.add_action(DeclareBooleanLaunchArg("use_sim_time", default_value=False))
 
     should_publish = LaunchConfiguration("publish_monitored_planning_scene")
 
