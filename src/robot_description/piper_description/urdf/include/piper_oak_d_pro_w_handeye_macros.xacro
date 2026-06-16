@@ -17,7 +17,6 @@
   Re-calibrate with hand_eye_calibration when the physical camera or mount changes.
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_oak_d_pro_w_attachment_defs">
-  <xacro:include filename="$(find depthai_descriptions_v3)/urdf/include/depthai_macro.urdf.xacro"/>
 
   <xacro:macro name="piper_mount_oak_d_pro_w_handeye" params="parent_link simulation:=false oak_visual_mesh:=true">
     <link name="oak-d-base-frame"/>
@@ -30,6 +29,7 @@
     </joint>
 
     <xacro:if value="${oak_visual_mesh}">
+      <xacro:include filename="$(find depthai_descriptions_v3)/urdf/include/depthai_macro.urdf.xacro"/>
       <xacro:depthai_camera
         camera_name="oak"
         parent="oak-d-base-frame"

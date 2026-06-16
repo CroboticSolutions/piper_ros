@@ -355,7 +355,7 @@
       friction="0" />
   </joint>
   <xacro:include filename="$(find piper_description)/urdf/include/piper_oak_d_sr_handeye_macros.xacro"/>
-  <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="true" oak_gazebo_rgbd_sensor="true"/>
+  <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="true" oak_gazebo_rgbd_sensor="true" oak_visual_mesh="false"/>
 
   <link
     name="gripper_base">

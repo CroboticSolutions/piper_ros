@@ -26,7 +26,6 @@
     rpy = 0.030685051 -1.217622058 -0.102237087
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_oak_attachment_defs">
-  <xacro:include filename="$(find depthai_descriptions)/urdf/include/depthai_macro.urdf.xacro"/>
 
   <!--
     oak_visual_mesh=false: same TF tree as depthai OAK-D-SR but skip STL mesh on oak_model_origin (lighter RViz/MoveIt).
@@ -43,6 +42,7 @@
     </joint>
 
     <xacro:if value="${oak_visual_mesh}">
+    <xacro:include filename="$(find depthai_descriptions)/urdf/include/depthai_macro.urdf.xacro"/>
     <xacro:depthai_camera
       camera_name="oak"
       parent="oak-d-base-frame"
