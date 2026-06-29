@@ -5,11 +5,11 @@
   Calibration: eye-in-hand link6 → oak_rgb_camera_optical_frame.
 
   Hand-eye estimate (link6→oak_rgb_camera_optical_frame): tx ty tz qx qy qz qw =
-    -0.0923 0.0028 0.0757 0.1189 -0.1255 0.7097 -0.6830
+    -0.0949 -0.0015 0.0437 -0.1250 0.1250 -0.6926 0.6993
 
   link6 → oak-d-base-frame (REP-103 URDF roll-pitch-yaw = intrinsic XYZ):
-    xyz = -0.092300000 0.002800000 0.075700000
-    rpy = 0.007829303 -1.223299500 -0.046167394
+    xyz = -0.094900000 -0.001500000 0.043700000
+    rpy = 0.004813527 -1.215368884 0.004813527
 
   Do not run depthai driver with i_publish_tf_from_calibration or publish_description when
   using this macro — Piper robot_state_publisher owns the camera TF tree.
@@ -22,8 +22,8 @@
     <link name="oak-d-base-frame"/>
     <joint name="piper_hand_eye_link6_mount" type="fixed">
       <origin
-        xyz="-0.092300000 0.002800000 0.075700000"
-        rpy="0.007829303 -1.223299500 -0.046167394"/>
+        xyz="-0.094900000 -0.001500000 0.043700000"
+        rpy="0.004813527 -1.215368884 0.004813527"/>
       <parent link="${parent_link}"/>
       <child link="oak-d-base-frame"/>
     </joint>

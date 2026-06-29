@@ -40,4 +40,10 @@ gripper_controller:
       - velocity
 joint_state_broadcaster:
   ros__parameters:
-    publish_topic: "/joint_states"
+    # NOTE: 'publish_topic' is NOT a supported joint_state_broadcaster param (silently ignored).
+    # use_local_topics:true makes this broadcaster publish the MOCK setpoint stream to
+    # /joint_state_broadcaster/joint_states (and /joint_state_broadcaster/dynamic_joint_states)
+    # instead of the global /joint_states, freeing /joint_states to carry REAL arm feedback
+    # (published by piper_read_slave_joint). The piper driver consumes this local topic as its
+    # command input, so MoveIt execution is unchanged.
+    use_local_topics: true
