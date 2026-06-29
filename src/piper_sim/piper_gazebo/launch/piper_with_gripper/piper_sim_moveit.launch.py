@@ -39,7 +39,11 @@ def _configure(context):
         "urdf",
         "piper_gz_no_gripper.urdf.xacro" if no_gripper else "piper_gz.urdf.xacro",
     )
-    controllers_yaml = os.path.join(pkg_moveit, "config", "ros2_controllers.yaml")
+    controllers_yaml = os.path.join(
+        pkg_gazebo,
+        "config",
+        "ros2_no_gripper_controllers.yaml" if no_gripper else "ros2_sim_controllers.yaml",
+    )
 
     robot_description_content = Command(
         [
@@ -65,6 +69,19 @@ def _configure(context):
         package="tf2_ros",
         executable="static_transform_publisher",
         arguments=["--frame-id", "world", "--child-frame-id", "base_link"],
+        parameters=[{"use_sim_time": True}],
+        output="log",
+    )
+
+    gazebo_camera_frame_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "--frame-id",
+            "oak_right_camera_frame",
+            "--child-frame-id",
+            "piper/link6/camera",
+        ],
         parameters=[{"use_sim_time": True}],
         output="log",
     )
@@ -133,6 +150,7 @@ def _configure(context):
             {"input_topic": "/piper/camera/points"},
             {"output_topic": "/piper/camera/points_reframed"},
             {"frame_id": "oak_right_camera_optical_frame"},
+            {"xyz_transform": "gazebo_camera_to_optical"},
         ],
         condition=UnlessCondition(LaunchConfiguration("no_gripper")),
     )
@@ -153,6 +171,7 @@ def _configure(context):
         gz_spawn_entity,
         robot_state_publisher_node,
         world_to_base_tf,
+        gazebo_camera_frame_tf,
         gz_bridge,
         joint_state_broadcaster_spawner,
         arm_controller_spawner,
