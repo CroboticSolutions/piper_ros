@@ -58,7 +58,7 @@
                 <state_interface name="velocity"/>
             </joint>
             <joint name="joint8">
-                <command_interface name="position"/>
+                <!-- URDF mimic of joint7: no command interface allowed. -->
                 <state_interface name="position">
                   <param name="initial_value">${initial_positions['joint8']}</param>
                 </state_interface>

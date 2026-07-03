@@ -441,9 +441,11 @@
       link="link7" />
     <axis
       xyz="0 0 1" />
+    <!-- Limits match piper_description_gz.xacro so simulated joint states are
+         never out of bounds for MoveIt (sim commands open up to 0.036). -->
     <limit
-      lower="0"
-      upper="0.035"
+      lower="-0.001"
+      upper="0.036"
       effort="10"
       velocity="1" />
   </joint>
@@ -499,15 +501,25 @@
       link="link8" />
     <axis
       xyz="0 0 -1" />
+    <!-- Single-motor parallel jaw: joint8 physically mirrors joint7. The mimic
+         tag makes MoveIt treat the gripper group as one DOF (joint7), so RViz
+         gripper planning commands only joint7 and joint8 follows. -->
+    <mimic joint="joint7" multiplier="-1" offset="0" />
     <limit
-      lower="-0.035"
-      upper="0"
+      lower="-0.036"
+      upper="0.001"
       effort="10"
       velocity="1" />
   </joint>
 
-  <!-- MoveIt / arm_api2 TCP: tool tip offset from gripper_base (+Z), 241.1 mm. -->
-  <xacro:property name="arm_tcp_xyz" value="0 0 0.2411"/>
+  <!-- MoveIt / arm_api2 TCP: grasp point near the FINGERTIPS of the gripper
+       (gripper_base +Z; gripping region spans 0.059..0.136 m, tips ~0.136 m).
+       0.130 m sits ~6 mm inside the tips. MUST match piper_description_gz.xacro:
+       when this was 0.1 and the gz/TF model 0.130, MoveIt IK placed the real
+       fingertips 30 mm lower than planned, so the pregrasp→grasp descent drove
+       the gripper into the ground plane. (Was 0.1 finger centre, originally
+       0.2411 m — ~10 cm beyond the fingertips.) -->
+  <xacro:property name="arm_tcp_xyz" value="0 0 0.130"/>
   <link name="arm_tcp">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />

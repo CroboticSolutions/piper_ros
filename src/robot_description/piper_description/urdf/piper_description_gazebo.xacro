@@ -505,8 +505,9 @@
       velocity="1" />
   </joint>
 
-  <!-- MoveIt / arm_api2 TCP: tool tip offset from gripper_base (+Z), 241.1 mm. -->
-  <xacro:property name="arm_tcp_xyz" value="0 0 0.2411"/>
+  <!-- MoveIt / arm_api2 TCP: grasp point BETWEEN the two gripper fingers
+       (gripper_base +Z ~0.098 m). Was 0.2411 m, ~10 cm beyond the fingertips. -->
+  <xacro:property name="arm_tcp_xyz" value="0 0 0.1"/>
   <link name="arm_tcp">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />

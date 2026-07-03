@@ -446,6 +446,26 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link7.STL" />
       </geometry>
+      <!-- High-friction, soft contact so the finger grips instead of slipping.
+           Mirrors ur_simulation_gz robotiq_2f_85_simple_parallel finger tuning. -->
+      <surface>
+        <friction>
+          <ode>
+            <mu1>100000.0</mu1>
+            <mu2>100000.0</mu2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <kp>1e+5</kp>
+            <kd>1</kd>
+            <soft_cfm>0</soft_cfm>
+            <soft_erp>0.2</soft_erp>
+            <minDepth>0.002</minDepth>
+            <maxVel>0</maxVel>
+          </ode>
+        </contact>
+      </surface>
     </collision>
   </link>
   <joint
@@ -461,12 +481,12 @@
     <axis
       xyz="0 0 1" />
     <limit
-      lower="0"
-      upper="0.035"
+      lower="-0.001"
+      upper="0.036"
       effort="10"
       velocity="1" />
     <dynamics
-      damping="0"
+      damping="1.0"
       friction="0" />
   </joint>
 
@@ -508,6 +528,26 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link8.STL" />
       </geometry>
+      <!-- High-friction, soft contact so the finger grips instead of slipping.
+           Mirrors ur_simulation_gz robotiq_2f_85_simple_parallel finger tuning. -->
+      <surface>
+        <friction>
+          <ode>
+            <mu1>100000.0</mu1>
+            <mu2>100000.0</mu2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <kp>1e+5</kp>
+            <kd>1</kd>
+            <soft_cfm>0</soft_cfm>
+            <soft_erp>0.2</soft_erp>
+            <minDepth>0.002</minDepth>
+            <maxVel>0</maxVel>
+          </ode>
+        </contact>
+      </surface>
     </collision>
   </link>
   <joint
@@ -522,18 +562,27 @@
       link="link8" />
     <axis
       xyz="0 0 -1" />
+    <!-- The physical gripper is a single-motor parallel jaw: joint8 always
+         mirrors joint7. gz_ros2_control (Jazzy) enforces the URDF mimic tag
+         natively, so only joint7 is commanded (no gripper8_controller and no
+         joint8_ctrl.py mirror node — that 50 Hz retriggering left joint8
+         frozen while joint7 squeezed the object alone). -->
+    <mimic joint="joint7" multiplier="-1" offset="0" />
     <limit
-      lower="-0.035"
-      upper="0"
+      lower="-0.036"
+      upper="0.001"
       effort="10"
       velocity="1" />
     <dynamics
-      damping="0"
+      damping="1.0"
       friction="0" />
   </joint>
 
-  <!-- MoveIt / arm_api2 TCP: tool tip offset from gripper_base (+Z), 241.1 mm. -->
-  <xacro:property name="arm_tcp_xyz" value="0 0 0.2411"/>
+  <!-- MoveIt / arm_api2 TCP: grasp point near the FINGERTIPS of the gripper
+       (gripper_base +Z; gripping region spans 0.059..0.136 m, tips ~0.136 m).
+       0.130 m sits ~6 mm inside the tips. Was 0.1 (finger centre), and
+       originally 0.2411 m (~10 cm beyond the fingertips). -->
+  <xacro:property name="arm_tcp_xyz" value="0 0 0.130"/>
   <link name="arm_tcp">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -584,8 +633,6 @@
       </hardware>
       <joint name="joint1">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">0.0</param>
           </state_interface>
@@ -598,8 +645,6 @@
       </joint>
       <joint name="joint2">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">0.1</param>
           </state_interface>
@@ -612,8 +657,6 @@
       </joint>
       <joint name="joint3">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">-1.5</param>
           </state_interface>
@@ -626,8 +669,6 @@
       </joint>
       <joint name="joint4">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">0.0</param>
           </state_interface>
@@ -640,8 +681,6 @@
       </joint>
       <joint name="joint5">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">0.0</param>
           </state_interface>
@@ -654,8 +693,6 @@
       </joint>
       <joint name="joint6">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">0.0</param>
           </state_interface>
@@ -668,8 +705,6 @@
       </joint>
       <joint name="joint7">
           <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
           <state_interface name="position">
               <param name="initial_value">0.0175</param>
           </state_interface>
@@ -681,9 +716,8 @@
           </state_interface>
       </joint>
       <joint name="joint8">
-          <command_interface name="position"/>
-          <command_interface name="velocity"/>
-          <command_interface name="effort"/>
+          <!-- mimic of joint7 (see joint definition above): no command
+               interface allowed; state interfaces stay for joint_states. -->
           <state_interface name="position">
               <param name="initial_value">-0.0175</param>
           </state_interface>

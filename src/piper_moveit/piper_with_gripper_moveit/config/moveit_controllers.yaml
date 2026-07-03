@@ -23,6 +23,8 @@ moveit_simple_controller_manager:
     type: FollowJointTrajectory
     action_ns: follow_joint_trajectory
     default: true
+    # joint8 is a URDF mimic of joint7 — the ros2_control gripper_controller
+    # only drives joint7, so claiming joint8 here made MoveIt send 2-joint
+    # trajectories the controller rejected ("plan and execute failed" in RViz).
     joints:
       - joint7
-      - joint8

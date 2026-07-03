@@ -105,6 +105,9 @@ def _configure(context):
         condition=UnlessCondition(LaunchConfiguration("no_gripper")),
     )
 
+    # joint8 is a URDF <mimic> of joint7 enforced by gz_ros2_control — no
+    # gripper8_controller / joint8_ctrl.py mirror node needed anymore.
+
     gz_spawn_entity = Node(
         package="ros_gz_sim",
         executable="create",

@@ -1,6 +1,10 @@
 # This config is used by Piper Gazebo/GZ simulation.
 # Unlike the real Piper MoveIt controller config, the sim must publish global
 # /joint_states because there is no hardware driver publishing feedback.
+# Gripper: joint7 via gripper_controller; joint8 is a URDF <mimic> of joint7
+# (multiplier -1) enforced natively by gz_ros2_control on Jazzy, so it is never
+# commanded. (The old joint8_ctrl.py 50 Hz mirror kept restarting the joint8
+# trajectory from its unmoved position, leaving that finger frozen.)
 controller_manager:
   ros__parameters:
     update_rate: 500  # Hz
@@ -13,6 +17,11 @@ controller_manager:
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
+
+gz_ros_control:
+  ros__parameters:
+    hold_joints: false
+    position_proportional_gain: 0.8
 
 arm_controller:
   ros__parameters:
@@ -33,7 +42,6 @@ gripper_controller:
   ros__parameters:
     joints:
       - joint7
-      - joint8
     command_interfaces:
       - position
     state_interfaces:

@@ -4,56 +4,63 @@ from rclpy.node import Node
 from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
+
 class GripperMirrorController(Node):
     def __init__(self):
         super().__init__('gripper_mirror_controller')
+        self.declare_parameter('joint7_name', 'joint7')
+        self.declare_parameter('mirror_joint_name', 'joint8')
+        self.declare_parameter('mirror_sign', -1.0)
+        self.declare_parameter('controller_state_topic', '/gripper_controller/controller_state')
+        self.declare_parameter('mirror_command_topic', '/gripper8_controller/joint_trajectory')
+        self.declare_parameter('trajectory_time_sec', 0.2)
 
-        # 订阅 joint7 的状态
-        self.subscription = self.create_subscription(
+        self.joint7_name = self.get_parameter('joint7_name').value
+        self.mirror_joint_name = self.get_parameter('mirror_joint_name').value
+        self.mirror_sign = float(self.get_parameter('mirror_sign').value)
+        controller_state_topic = self.get_parameter('controller_state_topic').value
+        mirror_command_topic = self.get_parameter('mirror_command_topic').value
+        self.trajectory_time_sec = float(self.get_parameter('trajectory_time_sec').value)
+
+        self.joint7_position = None
+        self.create_subscription(
             JointTrajectoryControllerState,
-            '/gripper_controller/controller_state',
-            self.joint_state_callback,
-            10
+            controller_state_topic,
+            self.controller_state_cb,
+            10,
         )
-
-        # 发布 joint8 控制命令
-        self.publisher = self.create_publisher(
-            JointTrajectory,
-            '/gripper8_controller/joint_trajectory',
-            10
-        )
-
-        # 定时器，控制每秒发布的频率
+        self.publisher = self.create_publisher(JointTrajectory, mirror_command_topic, 10)
         self.timer = self.create_timer(0.02, self.publish_joint8_command)
 
-        self.joint7_position = None  # 用于存储 joint7 的位置
-
-    def joint_state_callback(self, msg):
+    def controller_state_cb(self, msg: JointTrajectoryControllerState):
         try:
-            # 找到 joint7 的索引
-            joint_index = msg.joint_names.index("joint7")
-            self.joint7_position = msg.reference.positions[joint_index]
-
+            joint_index = msg.joint_names.index(self.joint7_name)
         except ValueError:
-            self.get_logger().warn("joint7 not found in /gripper_controller/state")
+            self.get_logger().warn(f"{self.joint7_name} not found in {msg.joint_names}")
+            return
+        if joint_index >= len(msg.reference.positions):
+            return
+        self.joint7_position = msg.reference.positions[joint_index]
 
     def publish_joint8_command(self):
-        if self.joint7_position is not None:
-            # 计算反向值
-            joint8_position = -self.joint7_position
+        if self.joint7_position is None:
+            return
 
-            # 创建 JointTrajectory 消息
-            traj_msg = JointTrajectory()
-            traj_msg.joint_names = ["joint8"]
+        traj_msg = JointTrajectory()
+        traj_msg.joint_names = [self.mirror_joint_name]
 
-            # 设定轨迹点
-            point = JointTrajectoryPoint()
-            point.positions = [joint8_position]
+        point = JointTrajectoryPoint()
+        point.positions = [self.mirror_sign * self.joint7_position]
+        sec = int(self.trajectory_time_sec)
+        point.time_from_start.sec = sec
+        point.time_from_start.nanosec = int((self.trajectory_time_sec - sec) * 1e9)
+        traj_msg.points.append(point)
 
-            traj_msg.points.append(point)
+        self.publisher.publish(traj_msg)
 
-            # 发布到 gripper8_controller
-            self.publisher.publish(traj_msg)
+    def spin_once_sync(self):
+        rclpy.spin_once(self, timeout_sec=0.0)
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -65,6 +72,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()
