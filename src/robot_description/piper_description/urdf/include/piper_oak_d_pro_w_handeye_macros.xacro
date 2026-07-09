@@ -2,19 +2,33 @@
 <!--
   Piper + OAK-D-PRO / OAK-D-PRO-W (depthai_ros_driver_v3 uses OAK-D-PRO URDF frames).
 
-  Calibration: eye-in-hand link6 → oak_rgb_camera_optical_frame.
+  Calibration: eye-in-hand link6 → oak_rgb_camera_optical_frame (ChArUco 13x9 board,
+  2026-07-06, 15 samples, residuals mean 6.5 mm / 1.4 deg).
 
-  Hand-eye estimate (link6→oak_rgb_camera_optical_frame): tx ty tz qx qy qz qw =
-    -0.0949 -0.0015 0.0437 -0.1250 0.1250 -0.6926 0.6993
+  Source: ~/.ros/hand_eye_calibration.yaml:
+    tracking_base_frame: oak_rgb_camera_optical_frame
+    robot_effector_frame: link6
+    tx ty tz qx qy qz qw =
+      -0.0936 0.0025 0.0443 0.1211 -0.1264 0.7035 -0.6888
 
-  link6 → oak-d-base-frame (REP-103 URDF roll-pitch-yaw = intrinsic XYZ):
-    xyz = -0.094900000 -0.001500000 0.043700000
-    rpy = 0.004813527 -1.215368884 0.004813527
+  The grasping point cloud is published in oak_rgb_camera_optical_frame — the same
+  frame this calibration targets. The mount origin below is solved as
+  T_mount = T_cal @ inv(T_nom_rgb) from depthai_descriptions_v3 nominal geometry,
+  so the stereo frames follow the camera's rigid internal layout (75 mm baseline).
 
   Do not run depthai driver with i_publish_tf_from_calibration or publish_description when
   using this macro — Piper robot_state_publisher owns the camera TF tree.
 
   Re-calibrate with hand_eye_calibration when the physical camera or mount changes.
+  After saving a new calibration from the GUI, regenerate the mount origin below with:
+
+    python3 -m hand_eye_calibration.depthai_mount_cli [dash]update-xacro path/to/this/file.xacro
+
+  (XML comments cannot contain a double dash: replace [dash] with two hyphens.)
+
+  (run from arms_ws/src/ros2_handeye_calibration; reads ~/.ros/hand_eye_calibration.yaml,
+  infers the rgb/right/left socket from tracking_base_frame). Then rebuild
+  piper_description and restart the robot stack.
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_oak_d_pro_w_attachment_defs">
 
@@ -22,8 +36,8 @@
     <link name="oak-d-base-frame"/>
     <joint name="piper_hand_eye_link6_mount" type="fixed">
       <origin
-        xyz="-0.094900000 -0.001500000 0.043700000"
-        rpy="0.004813527 -1.215368884 0.004813527"/>
+        xyz="-0.093570378136 0.002501953147 0.044282542398"
+        rpy="0.010834909692 -1.219008031786 -0.032043316431"/>
       <parent link="${parent_link}"/>
       <child link="oak-d-base-frame"/>
     </joint>
@@ -33,7 +47,7 @@
       <xacro:depthai_camera
         camera_name="oak"
         parent="oak-d-base-frame"
-        camera_model="OAK-D-PRO"
+        camera_model="OAK-D-PRO-W"
         base_frame="oak-d_frame"
         cam_pos_x="0.0"
         cam_pos_y="0.0"
@@ -49,7 +63,17 @@
     <xacro:unless value="${oak_visual_mesh}">
       <xacro:property name="oak_pro_pi" value="3.1415926535897931"/>
       <xacro:property name="oak_pro_baseline" value="0.075"/>
-      <link name="oak-d_frame"/>
+      <link name="oak-d_frame">
+        <visual>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <box size="0.080 0.105 0.030"/>
+          </geometry>
+          <material name="oak_visual_black">
+            <color rgba="0.05 0.05 0.05 1.0"/>
+          </material>
+        </visual>
+      </link>
       <joint name="oak_center_joint" type="fixed">
         <parent link="oak-d-base-frame"/>
         <child link="oak-d_frame"/>

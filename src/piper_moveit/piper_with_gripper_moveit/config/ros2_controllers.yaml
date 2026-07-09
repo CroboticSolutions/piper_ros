@@ -32,7 +32,8 @@ gripper_controller:
   ros__parameters:
     joints:
       - joint7
-      - joint8
+      # Real Piper exposes joint8 as passive/mimic state only. Claiming a
+      # joint8 command interface prevents gripper_controller activation.
     command_interfaces:
       - position
     state_interfaces:

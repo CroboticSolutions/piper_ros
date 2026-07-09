@@ -337,7 +337,7 @@
       effort="100"
       velocity="3" />
   </joint>
-  <xacro:piper_mount_oak_d_pro_w_handeye parent_link="link6" simulation="false" oak_visual_mesh="false"/>
+  <xacro:piper_mount_oak_d_pro_w_handeye parent_link="link6" simulation="false" oak_visual_mesh="true"/>
   <link
     name="gripper_base">
     <inertial>
