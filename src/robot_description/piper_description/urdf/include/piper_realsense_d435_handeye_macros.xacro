@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!--
+  Piper + Intel RealSense D435 (eye-in-hand on link6).
+
+  Frame names match realsense2_camera rs_launch.py defaults (camera_name:=camera):
+    camera_link, camera_color_optical_frame, etc.
+
+  Do not run rs_launch.py with publish_tf:=true when using this macro — Piper
+  robot_state_publisher owns the camera TF tree (same pattern as OAK-D Pro W).
+
+  Calibration: eye-in-hand link6 → camera_color_optical_frame from arm_api2 GUI
+  hand-eye calibration (2026-07-14). The origin below is converted from that
+  optical-frame estimate to the D435 bottom screw frame used by sensor_d435.
+  Re-calibrate with hand_eye_calibration and update the fixed joint origin when
+  the physical mount or camera changes.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_realsense_d435_attachment_defs">
+
+  <xacro:macro name="piper_mount_realsense_d435_handeye" params="parent_link use_mesh:=true">
+    <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro"/>
+    <xacro:sensor_d435
+      parent="${parent_link}"
+      name="camera"
+      use_nominal_extrinsics="true"
+      add_plug="false"
+      use_mesh="${use_mesh}">
+      <origin xyz="-0.085175061982 0.003246095153 0.029951767255"
+              rpy="-0.025292882305 -1.208671109768 0.020260903849"/>
+    </xacro:sensor_d435>
+  </xacro:macro>
+
+</robot>

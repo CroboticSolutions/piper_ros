@@ -2,7 +2,10 @@
 <robot
   name="piper"
   xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="wrist_camera" default="oak_pro_w"/>
+  <xacro:property name="wrist_camera_selected" value="$(arg wrist_camera)"/>
   <xacro:include filename="$(find piper_description)/urdf/include/piper_oak_d_pro_w_handeye_macros.xacro"/>
+  <xacro:include filename="$(find piper_description)/urdf/include/piper_realsense_d435_handeye_macros.xacro"/>
 <!-- world -->
   <link name="world"/>
   <joint name="fixed_base_joint" type="fixed">
@@ -337,7 +340,12 @@
       effort="100"
       velocity="3" />
   </joint>
-  <xacro:piper_mount_oak_d_pro_w_handeye parent_link="link6" simulation="false" oak_visual_mesh="true"/>
+  <xacro:if value="${wrist_camera_selected == 'realsense_d435'}">
+    <xacro:piper_mount_realsense_d435_handeye parent_link="link6" use_mesh="true"/>
+  </xacro:if>
+  <xacro:unless value="${wrist_camera_selected == 'realsense_d435'}">
+    <xacro:piper_mount_oak_d_pro_w_handeye parent_link="link6" simulation="false" oak_visual_mesh="true"/>
+  </xacro:unless>
   <link
     name="gripper_base">
     <inertial>
