@@ -51,11 +51,15 @@ def generate_launch_description():
     )
 
     # Define the node
+    # Pinned to dedicated cores 0-1 and given SCHED_FIFO priority so the CAN
+    # command/feedback loop keeps its timing regardless of load from vision/
+    # perception nodes (hamer, camera, etc.) sharing the rest of the machine.
     piper_node = Node(
         package='piper',
         executable='piper_single_ctrl',
         name='piper_ctrl_single_node',
         output='screen',
+        prefix='taskset -c 0,1 chrt -f 40',
         ros_arguments=['--log-level', LaunchConfiguration('log_level')],
         parameters=[{
             'can_port': LaunchConfiguration('can_port'),
@@ -80,6 +84,7 @@ def generate_launch_description():
         executable='piper_read_slave_joint',
         name='piper_read_slave_joint',
         output='screen',
+        prefix='taskset -c 0,1 chrt -f 40',
         ros_arguments=['--log-level', LaunchConfiguration('log_level')],
         parameters=[{
             'can_port': LaunchConfiguration('can_port'),
