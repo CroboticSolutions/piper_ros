@@ -91,6 +91,9 @@ def generate_launch_description():
         "publish_state_updates": should_publish,
         "publish_transforms_updates": should_publish,
         "monitor_dynamics": False,
+        # Gazebo can sit a few ulps past a URDF stop (joint5 ±1.22). Without this,
+        # CheckStartStateBounds aborts every RViz Plan & Execute.
+        "start_state_max_bounds_error": 0.05,
     }
 
     moveit_dict = _filter_planning_pipelines(moveit_config.to_dict())

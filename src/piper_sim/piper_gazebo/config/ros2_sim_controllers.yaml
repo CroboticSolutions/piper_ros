@@ -20,8 +20,14 @@ controller_manager:
 
 gz_ros_control:
   ros__parameters:
-    hold_joints: false
-    position_proportional_gain: 0.8
+    # Hold URDF initial pose until arm_controller is active. If false, gravity
+    # drops joint5 onto the ±1.22 rad URDF stop before spawn finishes; MoveIt
+    # then rejects every RViz Plan & Execute (START_STATE_INVALID).
+    hold_joints: true
+    # gz_ros2_control: v = gain * error * controller_manager_update_rate (500 Hz).
+    # Gain must be <= 1.0 or the joints oscillate; 40 saturates velocity/effort limits.
+    # 0.1 is the plugin default (same as FANUC CRX, which does not override it).
+    position_proportional_gain: 0.1
 
 arm_controller:
   ros__parameters:

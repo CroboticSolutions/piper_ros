@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Gazebo Sim + MoveIt combined launch (UR `ur_sim_moveit.launch.py` pattern)."""
+"""Gazebo Sim + MoveIt combined launch (UR `ur_sim_moveit.launch.py` pattern).
+
+wrist_camera:
+  gazebo_oak (default) — Gazebo RGB-D sensor + image bridge
+  oak_d_pro_w — URDF OAK-D Pro W TF only; launch real DepthAI separately (hybrid)
+  none — no wrist camera in URDF
+"""
 
 import os
 
@@ -29,6 +35,13 @@ from ament_index_python.packages import get_package_share_directory
 def _configure(context):
     no_gripper = LaunchConfiguration("no_gripper").perform(context).lower() in ("true", "1")
     launch_rviz = LaunchConfiguration("launch_rviz").perform(context).lower() in ("true", "1")
+    wrist_camera = LaunchConfiguration("wrist_camera").perform(context).strip()
+    if wrist_camera not in ("gazebo_oak", "oak_d_pro_w", "none"):
+        raise RuntimeError(
+            f"unsupported wrist_camera={wrist_camera!r}; "
+            "expected gazebo_oak, oak_d_pro_w, or none"
+        )
+    no_gz_camera = wrist_camera in ("oak_d_pro_w", "none")
 
     pkg_gazebo = get_package_share_directory("piper_gazebo")
     moveit_pkg = "piper_no_gripper_moveit" if no_gripper else "piper_with_gripper_moveit"
@@ -44,16 +57,27 @@ def _configure(context):
         "config",
         "ros2_no_gripper_controllers.yaml" if no_gripper else "ros2_sim_controllers.yaml",
     )
-
-    robot_description_content = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            TextSubstitution(text=" "),
-            TextSubstitution(text=urdf_file),
-            TextSubstitution(text=" simulation_controllers:="),
-            TextSubstitution(text=controllers_yaml),
-        ]
+    bridge_yaml = os.path.join(
+        pkg_gazebo,
+        "config",
+        "piper_gz_bridge_clock_only.yaml" if no_gz_camera else "piper_gz_bridge.yaml",
     )
+
+    xacro_cmd = [
+        PathJoinSubstitution([FindExecutable(name="xacro")]),
+        TextSubstitution(text=" "),
+        TextSubstitution(text=urdf_file),
+        TextSubstitution(text=" simulation_controllers:="),
+        TextSubstitution(text=controllers_yaml),
+    ]
+    if not no_gripper:
+        xacro_cmd.extend(
+            [
+                TextSubstitution(text=" wrist_camera:="),
+                TextSubstitution(text=wrist_camera),
+            ]
+        )
+    robot_description_content = Command(xacro_cmd)
     robot_description = {
         "robot_description": ParameterValue(robot_description_content, value_type=str)
     }
@@ -73,17 +97,21 @@ def _configure(context):
         output="log",
     )
 
-    gazebo_camera_frame_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        arguments=[
-            "--frame-id",
-            "oak_right_camera_frame",
-            "--child-frame-id",
-            "piper/link6/camera",
-        ],
-        parameters=[{"use_sim_time": True}],
-        output="log",
+    gazebo_camera_frame_tf = (
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            arguments=[
+                "--frame-id",
+                "oak_right_camera_frame",
+                "--child-frame-id",
+                "piper/link6/camera",
+            ],
+            parameters=[{"use_sim_time": True}],
+            output="log",
+        )
+        if not no_gz_camera
+        else None
     )
 
     joint_state_broadcaster_spawner = Node(
@@ -135,27 +163,28 @@ def _configure(context):
         }.items(),
     )
 
-    bridge_config = PathJoinSubstitution(
-        [FindPackageShare("piper_gazebo"), "config", "piper_gz_bridge.yaml"]
-    )
     gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        parameters=[{"config_file": bridge_config}],
+        parameters=[{"config_file": bridge_yaml}],
         output="screen",
     )
 
-    pointcloud_reframe_node = Node(
-        package="piper_gazebo",
-        executable="pointcloud_reframe.py",
-        output="screen",
-        parameters=[
-            {"input_topic": "/piper/camera/points"},
-            {"output_topic": "/piper/camera/points_reframed"},
-            {"frame_id": "oak_right_camera_optical_frame"},
-            {"xyz_transform": "gazebo_camera_to_optical"},
-        ],
-        condition=UnlessCondition(LaunchConfiguration("no_gripper")),
+    pointcloud_reframe_node = (
+        Node(
+            package="piper_gazebo",
+            executable="pointcloud_reframe.py",
+            output="screen",
+            parameters=[
+                {"input_topic": "/piper/camera/points"},
+                {"output_topic": "/piper/camera/points_reframed"},
+                {"frame_id": "oak_right_camera_optical_frame"},
+                {"xyz_transform": "gazebo_camera_to_optical"},
+            ],
+            condition=UnlessCondition(LaunchConfiguration("no_gripper")),
+        )
+        if not no_gz_camera
+        else None
     )
 
     moveit_stack_launch = IncludeLaunchDescription(
@@ -169,19 +198,26 @@ def _configure(context):
         condition=IfCondition(LaunchConfiguration("launch_move_group")),
     )
 
-    return [
+    nodes = [
         gz_sim,
         gz_spawn_entity,
         robot_state_publisher_node,
         world_to_base_tf,
-        gazebo_camera_frame_tf,
-        gz_bridge,
-        joint_state_broadcaster_spawner,
-        arm_controller_spawner,
-        gripper_controller_spawner,
-        pointcloud_reframe_node,
-        moveit_stack_launch,
     ]
+    if gazebo_camera_frame_tf is not None:
+        nodes.append(gazebo_camera_frame_tf)
+    nodes.extend(
+        [
+            gz_bridge,
+            joint_state_broadcaster_spawner,
+            arm_controller_spawner,
+            gripper_controller_spawner,
+        ]
+    )
+    if pointcloud_reframe_node is not None:
+        nodes.append(pointcloud_reframe_node)
+    nodes.append(moveit_stack_launch)
+    return nodes
 
 
 def generate_launch_description():
@@ -213,6 +249,11 @@ def generate_launch_description():
                 "launch_move_group",
                 default_value="true",
                 description="Launch MoveIt move_group and RViz",
+            ),
+            DeclareLaunchArgument(
+                "wrist_camera",
+                default_value="gazebo_oak",
+                description="gazebo_oak | oak_d_pro_w | none",
             ),
             OpaqueFunction(function=_configure),
         ]

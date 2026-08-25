@@ -8,6 +8,8 @@
   <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(arg simulation_controllers)</parameters>
+      <hold_joints>true</hold_joints>
+      <position_proportional_gain>0.1</position_proportional_gain>
     </plugin>
   </gazebo>
 

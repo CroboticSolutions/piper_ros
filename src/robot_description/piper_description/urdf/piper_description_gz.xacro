@@ -2,6 +2,8 @@
 <robot
   name="piper"
   xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="wrist_camera" default="gazebo_oak"/>
+  <xacro:property name="wrist_camera_selected" value="$(arg wrist_camera)"/>
 <!-- world -->
   <link name="world"/>
   <joint name="fixed_base_joint" type="fixed">
@@ -355,7 +357,14 @@
       friction="0" />
   </joint>
   <xacro:include filename="$(find piper_description)/urdf/include/piper_oak_d_sr_handeye_macros.xacro"/>
-  <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="true" oak_gazebo_rgbd_sensor="true" oak_visual_mesh="false"/>
+  <xacro:include filename="$(find piper_description)/urdf/include/piper_oak_d_pro_w_handeye_macros.xacro"/>
+  <xacro:if value="${wrist_camera_selected == 'gazebo_oak'}">
+    <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="true" oak_gazebo_rgbd_sensor="true" oak_visual_mesh="false"/>
+  </xacro:if>
+  <xacro:if value="${wrist_camera_selected == 'oak_d_pro_w'}">
+    <!-- Hybrid: calibrated Pro W TF tree, no Gazebo RGB-D sensor. -->
+    <xacro:piper_mount_oak_d_pro_w_handeye parent_link="link6" simulation="false" oak_visual_mesh="false"/>
+  </xacro:if>
 
   <link
     name="gripper_base">

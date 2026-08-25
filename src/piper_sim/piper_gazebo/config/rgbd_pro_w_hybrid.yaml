@@ -1,0 +1,20 @@
+# Namespaced DepthAI node (/oak_hw/oak) so wall-clock driver topics do not collide
+# with stamp-synced /oak/... used by apps under use_sim_time.
+# Node name stays "oak" so optical frame ids match the Piper URDF hand-eye tree.
+#
+# Match FANUC hybrid D435: RGB + stereo depth only. Host RGB-D pointclouds
+# (i_enable_rgbd) are opt-in via piper_hybrid_oak_pro_w.launch.py
+# enable_pointcloud:=true — they cost a full CPU core in stamp-sync.
+/oak_hw/oak:
+  ros__parameters:
+    driver:
+      i_publish_tf_from_calibration: false
+    pipeline_gen:
+      i_nn_type: none
+      i_enable_rgbd: false
+      i_pipeline_type: rgbd
+    stereo:
+      i_depth_preset: ROBOTICS
+      i_subpixel: true
+      i_subpixel_fractional_bits: 3
+      i_lr_check: true

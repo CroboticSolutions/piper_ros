@@ -25,7 +25,7 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 install(
-  PROGRAMS scripts/joint8_ctrl.py scripts/pointcloud_reframe.py
+  PROGRAMS scripts/joint8_ctrl.py scripts/pointcloud_reframe.py scripts/hybrid_oak_stamp_sync.py
   DESTINATION lib/${PROJECT_NAME}
 )
 if(BUILD_TESTING)

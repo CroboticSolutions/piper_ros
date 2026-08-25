@@ -3,6 +3,8 @@
 
   <!-- Arguments -->
   <xacro:arg name="simulation_controllers" default="" />
+  <!-- gazebo_oak | oak_d_pro_w | none (hybrid: real OAK-D Pro W + stamp sync) -->
+  <xacro:arg name="wrist_camera" default="gazebo_oak" />
 
   <!-- Include Piper description -->
   <xacro:include filename="$(find piper_description)/urdf/piper_description_gz.xacro"/>
@@ -11,6 +13,8 @@
   <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(arg simulation_controllers)</parameters>
+      <hold_joints>true</hold_joints>
+      <position_proportional_gain>0.1</position_proportional_gain>
     </plugin>
   </gazebo>
 
