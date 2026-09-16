@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Nominal D435 optics. Native depth and RGB are distinct sensors.
+       Nominal rectified pinhole intrinsics; not a per-device factory calibration.
+       RGB amplifier noise is an adjustable approximation, not a measured D435 fit. -->
+  <xacro:arg name="d435_rgb_noise_stddev" default="0.002"/>
+  <xacro:macro name="d435_gazebo_sensors">
+    <gazebo reference="camera_color_frame">
+      <sensor name="camera" type="camera">
+        <topic>/piper/d435/color/image</topic>
+        <always_on>true</always_on><update_rate>30</update_rate>
+        <camera>
+          <camera_info_topic>/piper/d435/color/camera_info</camera_info_topic>
+          <optical_frame_id>camera_color_optical_frame</optical_frame_id>
+          <horizontal_fov>${69.4 * pi / 180}</horizontal_fov>
+          <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+          <clip><near>0.05</near><far>20</far></clip>
+          <lens><intrinsics>
+            <fx>${960 / tan(69.4 * pi / 360)}</fx><fy>${540 / tan(42.5 * pi / 360)}</fy>
+            <cx>960</cx><cy>540</cy><s>0</s>
+          </intrinsics></lens>
+          <noise><type>gaussian</type><mean>0</mean><stddev>$(arg d435_rgb_noise_stddev)</stddev></noise>
+        </camera>
+      </sensor>
+    </gazebo>
+    <gazebo reference="camera_depth_frame">
+      <sensor name="d435_depth" type="depth_camera">
+        <topic>/piper/d435/depth/image</topic>
+        <always_on>true</always_on><update_rate>30</update_rate>
+        <camera>
+          <camera_info_topic>/piper/d435/depth/camera_info</camera_info_topic>
+          <optical_frame_id>camera_depth_optical_frame</optical_frame_id>
+          <horizontal_fov>${87 * pi / 180}</horizontal_fov>
+          <image><width>1280</width><height>720</height><format>R_FLOAT32</format></image>
+          <!-- Geometry is rendered from 5 cm so near objects still occlude.
+               The depth processor applies the HD minimum measurable depth. -->
+          <clip><near>0.05</near><far>10</far></clip>
+          <lens><intrinsics>
+            <fx>${640 / tan(87 * pi / 360)}</fx><fy>${360 / tan(58 * pi / 360)}</fy>
+            <cx>640</cx><cy>360</cy><s>0</s>
+          </intrinsics></lens>
+        </camera>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</robot>

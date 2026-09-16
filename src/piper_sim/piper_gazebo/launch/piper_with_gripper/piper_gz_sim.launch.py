@@ -28,6 +28,7 @@ def generate_launch_description():
                 ),
                 description="Gazebo world file",
             ),
+            DeclareLaunchArgument("welding_gun", default_value="false", description="Mount PIPER WELDING GUN instead of the gripper"),
             DeclareLaunchArgument(
                 "no_gripper",
                 default_value="false",
@@ -41,7 +42,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "wrist_camera",
                 default_value="gazebo_oak",
-                description="gazebo_oak | oak_d_pro_w | none",
+                description="gazebo_oak | gazebo_realsense (welding gun) | oak_d_pro_w | none",
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -59,6 +60,7 @@ def generate_launch_description():
                     "launch_rviz": LaunchConfiguration("launch_rviz"),
                     "world_file": LaunchConfiguration("world_file"),
                     "no_gripper": LaunchConfiguration("no_gripper"),
+                    "welding_gun": LaunchConfiguration("welding_gun"),
                     "launch_move_group": LaunchConfiguration("launch_move_group"),
                     "wrist_camera": LaunchConfiguration("wrist_camera"),
                 }.items(),

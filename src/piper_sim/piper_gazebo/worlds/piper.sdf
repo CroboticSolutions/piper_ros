@@ -79,64 +79,27 @@
       </link>
     </model>
 
-    <!-- Red cube in front of the Piper base. -->
-    <model name="red_cube">
-      <static>false</static>
-      <pose>0.5 0 0.025 0 0 0</pose>
+    <!-- User 4dio.STL: millimetres converted to metres; rotated +90 deg about X, large base face on Z=0; centred XY. -->
+    <model name="welding_workpiece_4dio">
+      <static>true</static>
+      <pose>0.40 -0.30 0 0 0 0</pose>
       <link name="link">
-        <!-- Light, graspable body. Without an explicit inertial a dynamic link
-             gets an undefined/unit mass and behaves erratically under grasp. -->
-        <inertial>
-          <mass>0.05</mass>
-          <inertia>
-            <ixx>2.083e-5</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>2.083e-5</iyy>
-            <iyz>0</iyz>
-            <izz>2.083e-5</izz>
-          </inertia>
-        </inertial>
         <collision name="collision">
-          <geometry>
-            <box>
-              <size>0.05 0.05 0.05</size>
-            </box>
-          </geometry>
-          <!-- High friction + soft contact so the gripper fingers grip the
-               cube instead of squeezing it out. Pairs with the piper link7/link8
-               finger surface tuning. -->
-          <surface>
-            <friction>
-              <ode>
-                <mu>1.0</mu>
-                <mu2>1.0</mu2>
-              </ode>
-            </friction>
-            <contact>
-              <ode>
-                <kp>1e+5</kp>
-                <kd>1</kd>
-                <min_depth>0.001</min_depth>
-                <max_vel>0</max_vel>
-              </ode>
-            </contact>
-          </surface>
+          <geometry><mesh><uri>file:///root/arms_ws/install/piper_gazebo/share/piper_gazebo/meshes/4dio_flat_m.stl</uri></mesh></geometry>
         </collision>
         <visual name="visual">
-          <geometry>
-            <box>
-              <size>0.05 0.05 0.05</size>
-            </box>
-          </geometry>
+          <geometry><mesh><uri>file:///root/arms_ws/install/piper_gazebo/share/piper_gazebo/meshes/4dio_flat_m.stl</uri></mesh></geometry>
           <material>
-            <ambient>1 0 0 1</ambient>
-            <diffuse>1 0 0 1</diffuse>
-            <specular>0.2 0.05 0.05 1</specular>
+            <ambient>0.65 0.68 0.72 1</ambient>
+            <diffuse>0.65 0.68 0.72 1</diffuse>
+            <specular>0.15 0.15 0.15 1</specular>
           </material>
         </visual>
       </link>
     </model>
+
+    <!-- Calibration board on floor; original STL world backed up in arms_ws/gazebo_backups. -->
+    <include><uri>file:///root/arms_ws/src/piper_ros/src/piper_sim/piper_gazebo/models/charuco_13x9</uri><name>charuco_board_floor</name><pose>0.50 0 0 0 0 0</pose></include>
 
   </world>
 </sdf>

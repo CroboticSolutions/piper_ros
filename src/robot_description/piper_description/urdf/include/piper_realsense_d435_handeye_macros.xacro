@@ -9,7 +9,7 @@
   robot_state_publisher owns the camera TF tree (same pattern as OAK-D Pro W).
 
   Calibration: eye-in-hand link6 → camera_color_optical_frame from arm_api2 GUI
-  hand-eye calibration (2026-07-14). The origin below is converted from that
+  hand-eye calibration (2026-09-14). The origin below is converted from that
   optical-frame estimate to the D435 bottom screw frame used by sensor_d435.
   Re-calibrate with hand_eye_calibration and update the fixed joint origin when
   the physical mount or camera changes.
@@ -24,8 +24,8 @@
       use_nominal_extrinsics="true"
       add_plug="false"
       use_mesh="${use_mesh}">
-      <origin xyz="-0.085175061982 0.003246095153 0.029951767255"
-              rpy="-0.025292882305 -1.208671109768 0.020260903849"/>
+      <origin xyz="-0.075244452946 0.003546591618 0.047111111066"
+              rpy="-0.004648673805 -1.226424370880 0.006596038054"/>
     </xacro:sensor_d435>
   </xacro:macro>
 

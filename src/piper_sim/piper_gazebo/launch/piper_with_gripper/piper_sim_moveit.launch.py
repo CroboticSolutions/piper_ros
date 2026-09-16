@@ -14,6 +14,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
     OpaqueFunction,
+    SetEnvironmentVariable,
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -30,13 +31,20 @@ from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 from ament_index_python.packages import get_package_share_directory
+from moveit_configs_utils import MoveItConfigsBuilder
 
 
 def _configure(context):
     no_gripper = LaunchConfiguration("no_gripper").perform(context).lower() in ("true", "1")
+    welding_gun = LaunchConfiguration("welding_gun").perform(context).lower() in ("true", "1")
+    no_gripper = no_gripper or welding_gun
     launch_rviz = LaunchConfiguration("launch_rviz").perform(context).lower() in ("true", "1")
     wrist_camera = LaunchConfiguration("wrist_camera").perform(context).strip()
-    if wrist_camera not in ("gazebo_oak", "oak_d_pro_w", "none"):
+    if welding_gun and wrist_camera != "gazebo_realsense":
+        raise RuntimeError("PIPER WELDING GUN requires wrist_camera:=gazebo_realsense")
+    if not welding_gun and wrist_camera == "gazebo_realsense":
+        raise RuntimeError("gazebo_realsense requires welding_gun:=true")
+    if wrist_camera not in ("gazebo_oak", "gazebo_realsense", "oak_d_pro_w", "none"):
         raise RuntimeError(
             f"unsupported wrist_camera={wrist_camera!r}; "
             "expected gazebo_oak, oak_d_pro_w, or none"
@@ -50,6 +58,7 @@ def _configure(context):
     urdf_file = os.path.join(
         pkg_gazebo,
         "urdf",
+        "piper_gz_welding_gun.urdf.xacro" if welding_gun else
         "piper_gz_no_gripper.urdf.xacro" if no_gripper else "piper_gz.urdf.xacro",
     )
     controllers_yaml = os.path.join(
@@ -60,7 +69,8 @@ def _configure(context):
     bridge_yaml = os.path.join(
         pkg_gazebo,
         "config",
-        "piper_gz_bridge_clock_only.yaml" if no_gz_camera else "piper_gz_bridge.yaml",
+        "piper_gz_bridge_clock_only.yaml" if no_gz_camera else
+        "piper_d435_bridge.yaml" if welding_gun else "piper_gz_bridge.yaml",
     )
 
     xacro_cmd = [
@@ -70,7 +80,7 @@ def _configure(context):
         TextSubstitution(text=" simulation_controllers:="),
         TextSubstitution(text=controllers_yaml),
     ]
-    if not no_gripper:
+    if not no_gripper or welding_gun:
         xacro_cmd.extend(
             [
                 TextSubstitution(text=" wrist_camera:="),
@@ -103,7 +113,7 @@ def _configure(context):
             executable="static_transform_publisher",
             arguments=[
                 "--frame-id",
-                "oak_right_camera_frame",
+                "camera_color_frame" if welding_gun else "oak_right_camera_frame",
                 "--child-frame-id",
                 "piper/link6/camera",
             ],
@@ -130,7 +140,7 @@ def _configure(context):
         package="controller_manager",
         executable="spawner",
         arguments=["gripper_controller", "--controller-manager", "/controller_manager"],
-        condition=UnlessCondition(LaunchConfiguration("no_gripper")),
+        condition=IfCondition("false" if no_gripper else "true"),
     )
 
     # joint8 is a URDF <mimic> of joint7 enforced by gz_ros2_control — no
@@ -181,11 +191,17 @@ def _configure(context):
                 {"frame_id": "oak_right_camera_optical_frame"},
                 {"xyz_transform": "gazebo_camera_to_optical"},
             ],
-            condition=UnlessCondition(LaunchConfiguration("no_gripper")),
+            condition=IfCondition("true" if welding_gun or not no_gripper else "false"),
         )
         if not no_gz_camera
         else None
     )
+
+    if welding_gun:
+        pointcloud_reframe_node = Node(
+            package="piper_gazebo", executable="d435_depth_processing.py",
+            parameters=[{"use_sim_time": True}], output="screen",
+        )
 
     moveit_stack_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -198,7 +214,13 @@ def _configure(context):
         condition=IfCondition(LaunchConfiguration("launch_move_group")),
     )
 
+    resource_paths = os.pathsep.join(filter(None, [
+        os.environ.get("GZ_SIM_RESOURCE_PATH", ""),
+        os.path.dirname(get_package_share_directory("piper_description")),
+        os.path.dirname(get_package_share_directory("realsense2_description")) if welding_gun else "",
+    ]))
     nodes = [
+        SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", resource_paths),
         gz_sim,
         gz_spawn_entity,
         robot_state_publisher_node,
@@ -216,7 +238,28 @@ def _configure(context):
     )
     if pointcloud_reframe_node is not None:
         nodes.append(pointcloud_reframe_node)
-    nodes.append(moveit_stack_launch)
+    if welding_gun:
+        # Gazebo, RSP, MoveIt and RViz use the same full robot/tool geometry.
+        config = (MoveItConfigsBuilder("piper", package_name="piper_no_gripper_moveit")
+            .robot_description(file_path=urdf_file, mappings={
+                "simulation_controllers": controllers_yaml, "wrist_camera": wrist_camera})
+            .robot_description_semantic(file_path=os.path.join(pkg_gazebo, "config", "piper_welding_gun.srdf"))
+            .planning_pipelines(pipelines=["ompl"])
+            .to_moveit_configs())
+        nodes.append(Node(package="moveit_ros_move_group", executable="move_group",
+            output="screen", parameters=[config.to_dict(), {
+                "use_sim_time": True, "publish_robot_description_semantic": True,
+                "publish_planning_scene": True, "publish_geometry_updates": True,
+                "publish_state_updates": True, "publish_transforms_updates": True,
+                "start_state_max_bounds_error": 0.05,
+            }], condition=IfCondition(LaunchConfiguration("launch_move_group"))))
+        if launch_rviz:
+            nodes.append(Node(package="rviz2", executable="rviz2", name="rviz2_moveit",
+                arguments=["-d", os.path.join(pkg_moveit, "config", "moveit.rviz")],
+                parameters=[config.to_dict(), {"use_sim_time": True}],
+                condition=IfCondition(LaunchConfiguration("launch_move_group"))))
+    else:
+        nodes.append(moveit_stack_launch)
     return nodes
 
 
@@ -240,6 +283,7 @@ def generate_launch_description():
                 ),
                 description="Gazebo world file",
             ),
+            DeclareLaunchArgument("welding_gun", default_value="false", description="Mount PIPER WELDING GUN instead of the gripper"),
             DeclareLaunchArgument(
                 "no_gripper",
                 default_value="false",
@@ -253,7 +297,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "wrist_camera",
                 default_value="gazebo_oak",
-                description="gazebo_oak | oak_d_pro_w | none",
+                description="gazebo_oak | gazebo_realsense (welding gun) | oak_d_pro_w | none",
             ),
             OpaqueFunction(function=_configure),
         ]

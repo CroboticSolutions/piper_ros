@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper">
+  <xacro:arg name="simulation" default="true"/>
+  <xacro:arg name="simulation_controllers" default=""/>
+  <xacro:arg name="wrist_camera" default="gazebo_realsense"/>
+  <xacro:include filename="$(find piper_description)/urdf/piper_no_gripper_description_gz.xacro"/>
+
+  <!-- Adapter assembly STL: mm, mounting face at Z=0, CAD includes flange Z rotation. -->
+  <link name="piper_welding_gun">
+    <visual>
+      <geometry><mesh filename="package://piper_description/meshes/welding_gun/PiPER_Prirubnica_Adapter_Welding_Gun.stl" scale="0.001 0.001 0.001"/></geometry>
+      <material name="piper_gun_metal"><color rgba="0.35 0.38 0.42 1"/></material>
+    </visual>
+    <collision>
+      <geometry><mesh filename="package://piper_description/meshes/welding_gun/PiPER_Prirubnica_Adapter_Welding_Gun.stl" scale="0.001 0.001 0.001"/></geometry>
+    </collision>
+    <!-- Approximate prototype dynamics; no measured mass supplied with STL. -->
+    <inertial>
+      <origin xyz="0.005 0 0.0775"/>
+      <mass value="0.45"/>
+      <inertia ixx="0.0016" ixy="0" ixz="0" iyy="0.0018" iyz="0" izz="0.0004"/>
+    </inertial>
+  </link>
+  <joint name="piper_welding_gun_mount" type="fixed">
+    <parent link="link6"/><child link="piper_welding_gun"/>
+    <!-- The assembly already includes the previous +90 degree flange Z rotation. -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <!-- CAD tip face centre; bent nozzle axis is (sin(35deg),0,cos(35deg)).
+       Keep arm_tcp as the shared MoveIt/arm_api2 endpoint; TCP +X follows wire. -->
+  <link name="arm_tcp"/>
+  <joint name="arm_tcp_joint" type="fixed">
+    <parent link="piper_welding_gun"/><child link="arm_tcp"/>
+    <origin xyz="0.05360585785 0 0.2085160675" rpy="0 -0.9599310886 0"/>
+  </joint>
+  <xacro:include filename="$(find piper_description)/urdf/include/piper_realsense_d435_handeye_macros.xacro"/>
+  <xacro:piper_mount_realsense_d435_handeye parent_link="link6"/>
+  <!-- Preserve the existing simulated-camera topic/frame API used by the GUI. -->
+  <link name="oak_right_camera_optical_frame"/>
+  <joint name="piper_sim_optical_alias" type="fixed">
+    <parent link="camera_color_optical_frame"/><child link="oak_right_camera_optical_frame"/>
+  </joint>
+  <xacro:if value="$(arg simulation)">
+  <xacro:include filename="$(find piper_description)/urdf/include/d435_gazebo_sensors.xacro"/>
+  <xacro:d435_gazebo_sensors/>
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg simulation_controllers)</parameters>
+      <hold_joints>true</hold_joints><position_proportional_gain>0.1</position_proportional_gain>
+    </plugin>
+  </gazebo>
+  </xacro:if>
+</robot>

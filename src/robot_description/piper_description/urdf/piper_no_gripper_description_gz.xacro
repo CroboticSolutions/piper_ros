@@ -2,7 +2,11 @@
 <robot
   name="piper"
   xmlns:xacro="http://ros.org/wiki/xacro">
+<xacro:arg name="simulation" default="true"/>
+<xacro:arg name="wrist_camera" default="gazebo_oak"/>
 <!-- world -->
+  <!-- Finishes estimated from https://global.agilex.ai/products/piper:
+       black joint housings/base, graphite arms, metallic tool flange. -->
   <link name="world"/>
   <joint name="fixed_base_joint" type="fixed">
       <parent link="world"/>
@@ -24,10 +28,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/base_link.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_base_link_finish">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.055 0.055 0.055 1" />
       </material>
     </visual>
     <collision>
@@ -55,10 +58,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link1.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_link1_finish">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.055 0.055 0.055 1" />
       </material>
     </visual>
     <collision>
@@ -104,10 +106,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link2.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_link2_finish">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -153,10 +154,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link3.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_link3_finish">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -202,10 +202,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link4.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_link4_finish">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.055 0.055 0.055 1" />
       </material>
     </visual>
     <collision>
@@ -251,10 +250,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link5.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_link5_finish">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0.055 0.055 0.055 1" />
       </material>
     </visual>
     <collision>
@@ -300,10 +298,9 @@
         <mesh
           filename="file://$(find piper_description)/meshes/link6.STL" />
       </geometry>
-      <material
-        name="">
+      <material name="piper_link6_finish">
         <color
-          rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
+          rgba="0.5 0.5 0.5 1" />
       </material>
     </visual>
     <collision>
@@ -336,8 +333,12 @@
   </joint>
 
   <xacro:include filename="$(find piper_description)/urdf/include/piper_oak_d_sr_handeye_macros.xacro"/>
-  <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="true" oak_gazebo_rgbd_sensor="true" oak_visual_mesh="false"/>
+  <xacro:property name="no_gripper_camera" value="$(arg wrist_camera)"/>
+  <xacro:if value="${no_gripper_camera == 'gazebo_oak'}">
+    <xacro:piper_mount_oak_d_sr_handeye parent_link="link6" simulation="true" oak_gazebo_rgbd_sensor="true" oak_visual_mesh="false"/>
+  </xacro:if>
 
+  <xacro:if value="$(arg simulation)">
   <gazebo reference="base_link">
       <selfCollide>false</selfCollide>
   </gazebo>
@@ -449,5 +450,6 @@
           </state_interface>
       </joint>
   </ros2_control>
+  </xacro:if>
 
 </robot>

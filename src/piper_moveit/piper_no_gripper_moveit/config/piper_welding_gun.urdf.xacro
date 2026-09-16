@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper">
+  <xacro:arg name="simulation" default="false"/>
+  <xacro:arg name="initial_positions_file" default="$(find piper_no_gripper_moveit)/config/initial_positions.yaml"/>
+  <xacro:include filename="$(find piper_description)/urdf/piper_welding_gun.urdf.xacro"/>
+  <xacro:include filename="piper.ros2_control.xacro"/>
+  <!-- Same command bridge as the existing PiPER Real profile. The CAN driver
+       consumes local broadcaster setpoints and publishes measured /joint_states. -->
+  <xacro:piper_ros2_control name="PiperCommandBridge" initial_positions_file="$(arg initial_positions_file)"/>
+</robot>
