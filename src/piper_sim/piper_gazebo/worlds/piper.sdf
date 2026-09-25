@@ -99,7 +99,7 @@
     </model>
 
     <!-- Calibration board on floor; original STL world backed up in arms_ws/gazebo_backups. -->
-    <include><uri>file:///root/arms_ws/src/piper_ros/src/piper_sim/piper_gazebo/models/charuco_13x9</uri><name>charuco_board_floor</name><pose>0.50 0 0 0 0 0</pose></include>
+    <include><uri>file:///root/arms_ws/src/robots/piper_ros/src/piper_sim/piper_gazebo/models/charuco_13x9</uri><name>charuco_board_floor</name><pose>0.50 0 0 0 0 0</pose></include>
 
   </world>
 </sdf>

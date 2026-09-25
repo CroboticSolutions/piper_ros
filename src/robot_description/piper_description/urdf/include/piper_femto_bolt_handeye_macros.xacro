@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!--
+  Piper + Orbbec Femto Bolt (eye-in-hand on link6).
+
+  Frame names match orbbec_camera's femto_bolt.launch.py defaults (camera_name:=camera):
+    camera_base_link, camera_link, camera_color_optical_frame, etc.
+
+  Real hardware: robot_state_publisher owns only the mount through camera_link.
+  The Orbbec driver owns all internal camera TFs (publish_tf:=true).
+  Simulation uses nominal internal transforms because no camera driver runs.
+
+  Calibration: eye-in-hand link6 -> camera_color_optical_frame from arm_api2 GUI
+  hand-eye calibration (2026-09-23 14:37 UTC; 15 samples, 13 inliers,
+  Daniilidis + nonlinear refinement; 2.57mm / 0.94deg mean residual,
+  3.25mm worst-direction 1-sigma uncertainty; not
+  independently validated). The origin below is converted from that
+  optical-frame estimate to the Femto Bolt's own bottom-mount base_link frame
+  used by orbbec_description's femto_bolt xacro macro (base_link -> link ->
+  depth_frame -> color_frame -> color_optical_frame fixed offsets baked into
+  that macro). Re-calibrate with hand_eye_calibration and update the fixed
+  joint origin when the physical mount or camera changes.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_femto_bolt_attachment_defs">
+
+  <xacro:macro name="piper_mount_femto_bolt_handeye" params="parent_link use_nominal_extrinsics:=false">
+    <xacro:include filename="$(find orbbec_description)/urdf/femto_bolt.urdf.xacro"/>
+    <xacro:femto_bolt prefix="camera" parent="${parent_link}" use_nominal_extrinsics="${use_nominal_extrinsics}">
+      <!-- Preserve the original nominal-chain hand-eye optical pose. The real
+           mount is re-expressed using this camera's recorded driver extrinsics
+           (2026-09-24); internal TFs themselves always come from the driver. -->
+      <origin xyz="${'-0.116960119269 0.004378100746 -0.028825832440' if use_nominal_extrinsics else '-0.116993388682 0.003847750737 -0.028481607579'}"
+              rpy="${'0.062955579669 -0.945517293938 -0.083284514853' if use_nominal_extrinsics else '0.062031929577 -0.945558883998 -0.082131313722'}"/>
+    </xacro:femto_bolt>
+  </xacro:macro>
+
+</robot>

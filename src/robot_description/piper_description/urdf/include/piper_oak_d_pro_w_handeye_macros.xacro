@@ -26,7 +26,7 @@
 
   (XML comments cannot contain a double dash: replace [dash] with two hyphens.)
 
-  (run from arms_ws/src/ros2_handeye_calibration; reads ~/.ros/hand_eye_calibration.yaml,
+  (run from arms_ws/src/misc/ros2_handeye_calibration; reads ~/.ros/hand_eye_calibration.yaml,
   infers the rgb/right/left socket from tracking_base_frame). Then rebuild
   piper_description and restart the robot stack.
 -->

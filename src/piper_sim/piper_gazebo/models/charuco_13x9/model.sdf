@@ -2,5 +2,5 @@
 <sdf version="1.8"><model name="charuco_board_floor"><static>true</static><pose>0.50 0 0 0 0 0</pose><link name="board">
 <collision name="plate"><pose>0 0 0.001 0 0 0</pose><geometry><box><size>0.215 0.155 0.002</size></box></geometry></collision>
 <visual name="white_backing"><pose>0 0 0.001 0 0 0</pose><geometry><box><size>0.215 0.155 0.002</size></box></geometry><material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>0 0 0 1</specular></material></visual>
-<visual name="charuco_pattern"><pose>0 0 0.00202 0 0 0</pose><cast_shadows>false</cast_shadows><geometry><mesh><uri>file:///root/arms_ws/src/piper_ros/src/piper_sim/piper_gazebo/models/charuco_13x9/pattern.stl</uri></mesh></geometry><material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 1</specular></material></visual>
+<visual name="charuco_pattern"><pose>0 0 0.00202 0 0 0</pose><cast_shadows>false</cast_shadows><geometry><mesh><uri>file:///root/arms_ws/src/robots/piper_ros/src/piper_sim/piper_gazebo/models/charuco_13x9/pattern.stl</uri></mesh></geometry><material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 1</specular></material></visual>
 </link></model></sdf>

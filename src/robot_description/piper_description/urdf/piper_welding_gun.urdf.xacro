@@ -26,20 +26,39 @@
     <!-- The assembly already includes the previous +90 degree flange Z rotation. -->
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
-  <!-- CAD tip face centre; bent nozzle axis is (sin(35deg),0,cos(35deg)).
-       Keep arm_tcp as the shared MoveIt/arm_api2 endpoint; TCP +X follows wire. -->
+  <!-- TCP pivot/axis calibration 2026-09-23T14:02:51Z, parent link6.
+       Calibrated +Z is expressed as arm_tcp +X for the welding planner.
+       Position RMS 3.54 mm; independent physical validation is still required.
+       The gun mount is identity, so the flange-relative origin applies here. -->
   <link name="arm_tcp"/>
   <joint name="arm_tcp_joint" type="fixed">
     <parent link="piper_welding_gun"/><child link="arm_tcp"/>
-    <origin xyz="0.05360585785 0 0.2085160675" rpy="0 -0.9599310886 0"/>
+    <!-- Simulation: tip of the CAD wire/contact tip (end of the 3 mm stub), on the
+         35 deg bent nozzle axis (sin 35, 0, cos 35); TCP +X follows the wire. The
+         real robot keeps the calibrated pivot, which is not on the CAD axis. -->
+    <xacro:if value="$(arg simulation)">
+      <origin xyz="0.05360585785 0 0.2085160675" rpy="0 -0.9599310886 0"/>
+    </xacro:if>
+    <xacro:unless value="$(arg simulation)">
+      <origin xyz="0.059716507277 -0.002810430194 0.190158035855" rpy="-0.027929237913 -0.909524738174 0.022044250167"/>
+    </xacro:unless>
   </joint>
-  <xacro:include filename="$(find piper_description)/urdf/include/piper_realsense_d435_handeye_macros.xacro"/>
-  <xacro:piper_mount_realsense_d435_handeye parent_link="link6"/>
+  <xacro:if value="${'$(arg wrist_camera)' == 'femto_bolt'}">
+    <xacro:include filename="$(find piper_description)/urdf/include/piper_femto_bolt_handeye_macros.xacro"/>
+    <xacro:piper_mount_femto_bolt_handeye parent_link="link6" use_nominal_extrinsics="$(arg simulation)"/>
+  </xacro:if>
+  <xacro:unless value="${'$(arg wrist_camera)' == 'femto_bolt'}">
+    <xacro:include filename="$(find piper_description)/urdf/include/piper_realsense_d435_handeye_macros.xacro"/>
+    <xacro:piper_mount_realsense_d435_handeye parent_link="link6"/>
+  </xacro:unless>
   <!-- Preserve the existing simulated-camera topic/frame API used by the GUI. -->
+  <!-- Driver-owned Femto optical frames are not links in the real URDF. -->
+  <xacro:if value="${'$(arg simulation)' == 'true' or '$(arg wrist_camera)' != 'femto_bolt'}">
   <link name="oak_right_camera_optical_frame"/>
   <joint name="piper_sim_optical_alias" type="fixed">
     <parent link="camera_color_optical_frame"/><child link="oak_right_camera_optical_frame"/>
   </joint>
+  </xacro:if>
   <xacro:if value="$(arg simulation)">
   <xacro:include filename="$(find piper_description)/urdf/include/d435_gazebo_sensors.xacro"/>
   <xacro:d435_gazebo_sensors/>

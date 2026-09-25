@@ -40,14 +40,17 @@ def _configure(context):
     no_gripper = no_gripper or welding_gun
     launch_rviz = LaunchConfiguration("launch_rviz").perform(context).lower() in ("true", "1")
     wrist_camera = LaunchConfiguration("wrist_camera").perform(context).strip()
-    if welding_gun and wrist_camera != "gazebo_realsense":
-        raise RuntimeError("PIPER WELDING GUN requires wrist_camera:=gazebo_realsense")
-    if not welding_gun and wrist_camera == "gazebo_realsense":
-        raise RuntimeError("gazebo_realsense requires welding_gun:=true")
-    if wrist_camera not in ("gazebo_oak", "gazebo_realsense", "oak_d_pro_w", "none"):
+    _welding_gun_cameras = ("gazebo_realsense", "femto_bolt")
+    if welding_gun and wrist_camera not in _welding_gun_cameras:
+        raise RuntimeError(
+            f"PIPER WELDING GUN requires wrist_camera:=gazebo_realsense or femto_bolt, got {wrist_camera!r}"
+        )
+    if not welding_gun and wrist_camera in _welding_gun_cameras:
+        raise RuntimeError(f"wrist_camera:={wrist_camera} requires welding_gun:=true")
+    if wrist_camera not in ("gazebo_oak", "gazebo_realsense", "femto_bolt", "oak_d_pro_w", "none"):
         raise RuntimeError(
             f"unsupported wrist_camera={wrist_camera!r}; "
-            "expected gazebo_oak, oak_d_pro_w, or none"
+            "expected gazebo_oak, gazebo_realsense, femto_bolt, oak_d_pro_w, or none"
         )
     no_gz_camera = wrist_camera in ("oak_d_pro_w", "none")
 
@@ -217,7 +220,8 @@ def _configure(context):
     resource_paths = os.pathsep.join(filter(None, [
         os.environ.get("GZ_SIM_RESOURCE_PATH", ""),
         os.path.dirname(get_package_share_directory("piper_description")),
-        os.path.dirname(get_package_share_directory("realsense2_description")) if welding_gun else "",
+        os.path.dirname(get_package_share_directory("realsense2_description")) if (welding_gun and wrist_camera != "femto_bolt") else "",
+        os.path.dirname(get_package_share_directory("orbbec_description")) if (welding_gun and wrist_camera == "femto_bolt") else "",
     ]))
     nodes = [
         SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", resource_paths),
@@ -244,7 +248,9 @@ def _configure(context):
             .robot_description(file_path=urdf_file, mappings={
                 "simulation_controllers": controllers_yaml, "wrist_camera": wrist_camera})
             .robot_description_semantic(file_path=os.path.join(pkg_gazebo, "config", "piper_welding_gun.srdf"))
-            .planning_pipelines(pipelines=["ompl"])
+            # Same pipelines as the real welding profile; arm_api2 also uses Pilz LIN.
+            .planning_pipelines(pipelines=["ompl", "pilz_industrial_motion_planner"],
+                                default_planning_pipeline="ompl")
             .to_moveit_configs())
         nodes.append(Node(package="moveit_ros_move_group", executable="move_group",
             output="screen", parameters=[config.to_dict(), {

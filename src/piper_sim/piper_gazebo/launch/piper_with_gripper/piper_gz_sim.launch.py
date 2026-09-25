@@ -42,7 +42,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "wrist_camera",
                 default_value="gazebo_oak",
-                description="gazebo_oak | gazebo_realsense (welding gun) | oak_d_pro_w | none",
+                description="gazebo_oak | gazebo_realsense (welding gun) | femto_bolt (welding gun) | oak_d_pro_w | none",
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
