@@ -109,7 +109,8 @@ class D435DepthProcessing(Node):
             out.header.frame_id = cfg['depth_frame']
             self.depth_pub.publish(out)
         stamp = self.stamp(msg)
-        if self.last_cloud is not None and 0 <= stamp - self.last_cloud < 1 / cfg['pointcloud_rate_hz']:
+        # 5 ms margin: 30 Hz depth stamps land at 0.0999 s, which skipped to 7.5 Hz.
+        if self.last_cloud is not None and 0 <= stamp - self.last_cloud < 1 / cfg['pointcloud_rate_hz'] - 0.005:
             return
         if not (self.cloud_pub.get_subscription_count() or self.legacy_pub.get_subscription_count()):
             return
