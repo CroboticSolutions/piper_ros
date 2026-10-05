@@ -43,6 +43,12 @@ def generate_launch_description():
         description='gripper'
     )
 
+    sdk_backend_arg = DeclareLaunchArgument(
+        'sdk_backend',
+        default_value='pyagxarm',
+        description="CAN SDK for the command node: 'pyagxarm' or the previous 'piper_sdk'."
+    )
+
     teach_sync_arg = DeclareLaunchArgument(
         'teach_sync',
         default_value='true',
@@ -64,15 +70,14 @@ def generate_launch_description():
         parameters=[{
             'can_port': LaunchConfiguration('can_port'),
             'auto_enable': LaunchConfiguration('auto_enable'),
+            'require_hardware_feedback': True,
+            'sdk_backend': LaunchConfiguration('sdk_backend'),
             'gripper_val_mutiple': LaunchConfiguration('gripper_val_mutiple'),
             'gripper_exist': LaunchConfiguration('gripper_exist'),
         }],
         remappings=[
-            # Command input. The MoveIt/ros2_control mock setpoint stream is published by
-            # joint_state_broadcaster (use_local_topics:true) on /joint_state_broadcaster/joint_states.
-            # This is the SAME data that used to arrive on /joint_states, just renamed, so MoveIt
-            # execution is unchanged. /joint_states is now reserved for REAL arm feedback below.
-            ('joint_ctrl_single', '/joint_state_broadcaster/joint_states'),
+            # Only the hardware interface publishes commands; JSB is measured state.
+            ('joint_ctrl_single', '/piper/joint_commands'),
         ]
     )
 
@@ -116,6 +121,7 @@ def generate_launch_description():
         gripper_exist_arg,
         gripper_val_mutiple_arg,
         teach_sync_arg,
+        sdk_backend_arg,
         piper_node,
         piper_read_node,
         piper_teach_sync_node

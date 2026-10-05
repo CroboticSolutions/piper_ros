@@ -9,6 +9,7 @@ import time
 import threading
 import argparse
 import math
+from piper.units import MILLIDEGREES_PER_RAD
 from piper_sdk import *
 from piper_sdk import C_PiperInterface
 from piper_msgs.msg import PiperStatusMsg, PosCmd
@@ -168,12 +169,12 @@ class PiperRosNode(Node):
         new_time = max(self.piper.GetArmJointMsgs().time_stamp, self.piper.GetArmHighSpdInfoMsgs().time_stamp)
         # Here, you can set the joint positions to any value you want
         # The raw data obtained is in degrees multiplied by 1000. To convert to radians, divide by 1000, multiply by π/180, and limit to 5 decimal places
-        joint_0: float = (self.piper.GetArmJointMsgs().joint_state.joint_1 / 1000) * 0.017444
-        joint_1: float = (self.piper.GetArmJointMsgs().joint_state.joint_2 / 1000) * 0.017444
-        joint_2: float = (self.piper.GetArmJointMsgs().joint_state.joint_3 / 1000) * 0.017444
-        joint_3: float = (self.piper.GetArmJointMsgs().joint_state.joint_4 / 1000) * 0.017444
-        joint_4: float = (self.piper.GetArmJointMsgs().joint_state.joint_5 / 1000) * 0.017444
-        joint_5: float = (self.piper.GetArmJointMsgs().joint_state.joint_6 / 1000) * 0.017444
+        joint_0: float = (self.piper.GetArmJointMsgs().joint_state.joint_1 / 1000) * (math.pi / 180.0)
+        joint_1: float = (self.piper.GetArmJointMsgs().joint_state.joint_2 / 1000) * (math.pi / 180.0)
+        joint_2: float = (self.piper.GetArmJointMsgs().joint_state.joint_3 / 1000) * (math.pi / 180.0)
+        joint_3: float = (self.piper.GetArmJointMsgs().joint_state.joint_4 / 1000) * (math.pi / 180.0)
+        joint_4: float = (self.piper.GetArmJointMsgs().joint_state.joint_5 / 1000) * (math.pi / 180.0)
+        joint_5: float = (self.piper.GetArmJointMsgs().joint_state.joint_6 / 1000) * (math.pi / 180.0)
         joint_6: float = self.piper.GetArmGripperMsgs().gripper_state.grippers_angle / 1000000
         vel_0: float = self.piper.GetArmHighSpdInfoMsgs().motor_1.motor_speed / 1000
         vel_1: float = self.piper.GetArmHighSpdInfoMsgs().motor_2.motor_speed / 1000
@@ -202,12 +203,12 @@ class PiperRosNode(Node):
         # self.joint_states_ctrl.header.stamp = self.get_clock().now().to_msg()
         new_time = max(self.piper.GetArmJointCtrl().time_stamp, self.piper.GetArmGripperCtrl().time_stamp)
         self.joint_states_ctrl.header.stamp = self.float_to_ros_time(new_time)
-        joint_0: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_1/1000) * 0.017444
-        joint_1: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_2/1000) * 0.017444
-        joint_2: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_3/1000) * 0.017444
-        joint_3: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_4/1000) * 0.017444
-        joint_4: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_5/1000) * 0.017444
-        joint_5: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_6/1000) * 0.017444
+        joint_0: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_1/1000) * (math.pi / 180.0)
+        joint_1: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_2/1000) * (math.pi / 180.0)
+        joint_2: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_3/1000) * (math.pi / 180.0)
+        joint_3: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_4/1000) * (math.pi / 180.0)
+        joint_4: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_5/1000) * (math.pi / 180.0)
+        joint_5: float = (self.piper.GetArmJointCtrl().joint_ctrl.joint_6/1000) * (math.pi / 180.0)
         joint_6: float = self.piper.GetArmGripperCtrl().gripper_ctrl.grippers_angle/1000000
         self.joint_states_ctrl.position = [joint_0, joint_1, joint_2, joint_3, joint_4, joint_5, joint_6]  # Example values
         if any(abs(pos) > 3.5 for pos in self.joint_ctrl.position):
@@ -248,7 +249,7 @@ class PiperRosNode(Node):
         Args:
             pos_data (): The position data
         """
-        factor = 180 / 3.1415926
+        factor = 180 / math.pi
         self.get_logger().info(f"Received PosCmd:")
         self.get_logger().info(f"x: {pos_data.x}")
         self.get_logger().info(f"y: {pos_data.y}")
@@ -282,7 +283,7 @@ class PiperRosNode(Node):
         Args:
             joint_data (): The joint data
         """
-        factor = 57324.840764  # 1000*180/3.14
+        factor = MILLIDEGREES_PER_RAD
         # self.get_logger().info(f"Received Joint States:")
 
         # 创建一个字典来存储关节名称与位置的映射

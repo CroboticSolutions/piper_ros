@@ -120,5 +120,14 @@ def generate_launch_description():
             arguments=["arm_controller", "--controller-manager", "/controller_manager"],
         )
     )
+    # Declaring the controller in YAML does not load it into controller_manager.
+    # Keep the gripper available just as in the standard with-gripper demo.
+    ld.add_action(
+        Node(
+            package="controller_manager",
+            executable="spawner",
+            arguments=["gripper_controller", "--controller-manager", "/controller_manager"],
+        )
+    )
 
     return ld

@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper">
+    <xacro:arg name="use_mock_hardware" default="false"/>
     <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
     <xacro:arg name="wrist_camera" default="oak_pro_w"/>
 
@@ -10,6 +11,6 @@
     <xacro:include filename="piper.ros2_control.xacro" />
 
 
-    <xacro:piper_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+    <xacro:piper_ros2_control name="PiperSystem" initial_positions_file="$(arg initial_positions_file)" use_mock_hardware="$(arg use_mock_hardware)"/>
 
 </robot>

@@ -49,4 +49,5 @@
   <export>
       <build_type>ament_cmake</build_type>
   </export>
+  <exec_depend>piper_hardware</exec_depend>
 </package>

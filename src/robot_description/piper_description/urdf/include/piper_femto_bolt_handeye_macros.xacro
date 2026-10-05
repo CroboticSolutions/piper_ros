@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <!--
-  Piper + Orbbec Femto Bolt (eye-in-hand on link6).
+  Piper + Orbbec Femto Bolt (eye-in-hand; real mount on link5 since 2026-10-05,
+  simulation on link6). The real origin below is relative to that parent link and
+  is stale until the new mount is calibrated (robot_effector_frame:=link5).
 
   Frame names match orbbec_camera's femto_bolt.launch.py defaults (camera_name:=camera):
     camera_base_link, camera_link, camera_color_optical_frame, etc.
@@ -28,8 +30,8 @@
       <!-- Preserve the original nominal-chain hand-eye optical pose. The real
            mount is re-expressed using this camera's recorded driver extrinsics
            (2026-09-24); internal TFs themselves always come from the driver. -->
-      <origin xyz="${'-0.116960119269 0.004378100746 -0.028825832440' if use_nominal_extrinsics else '-0.116993388682 0.003847750737 -0.028481607579'}"
-              rpy="${'0.062955579669 -0.945517293938 -0.083284514853' if use_nominal_extrinsics else '0.062031929577 -0.945558883998 -0.082131313722'}"/>
+      <origin xyz="${'-0.116960119269 0.004378100746 -0.028825832440' if use_nominal_extrinsics else '-0.044525749544 -0.064654994020 -0.003299954006'}"
+              rpy="${'0.062955579669 -0.945517293938 -0.083284514853' if use_nominal_extrinsics else '1.698973335600 -0.016012269413 -1.559219138477'}"/>
     </xacro:femto_bolt>
   </xacro:macro>
 

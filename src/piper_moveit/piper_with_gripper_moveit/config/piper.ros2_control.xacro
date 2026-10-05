@@ -1,12 +1,21 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <xacro:macro name="piper_ros2_control" params="name initial_positions_file">
+    <xacro:macro name="piper_ros2_control" params="name initial_positions_file use_mock_hardware:=false">
         <xacro:property name="initial_positions" value="${load_yaml(initial_positions_file)['initial_positions']}"/>
 
         <ros2_control name="${name}" type="system">
             <hardware>
-                <!-- By default, set up controllers for simulation. This won't work on real hardware -->
-                <plugin>mock_components/GenericSystem</plugin>
+                <xacro:if value="${use_mock_hardware}">
+                    <plugin>mock_components/GenericSystem</plugin>
+                </xacro:if>
+                <xacro:unless value="${use_mock_hardware}">
+                    <plugin>piper_hardware/PiperSystem</plugin>
+                    <param name="feedback_topic">/joint_states</param>
+                    <param name="command_topic">/piper/joint_commands</param>
+                    <param name="ready_topic">/piper/hardware_ready</param>
+                    <param name="feedback_timeout">0.25</param>
+                    <param name="startup_timeout">5.0</param>
+                </xacro:unless>
             </hardware>
             <joint name="joint1">
                 <command_interface name="position"/>
@@ -55,14 +64,12 @@
                 <state_interface name="position">
                   <param name="initial_value">${initial_positions['joint7']}</param>
                 </state_interface>
-                <state_interface name="velocity"/>
             </joint>
             <joint name="joint8">
                 <!-- URDF mimic of joint7: no command interface allowed. -->
                 <state_interface name="position">
                   <param name="initial_value">${initial_positions['joint8']}</param>
                 </state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
         </ros2_control>

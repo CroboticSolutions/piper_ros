@@ -82,7 +82,7 @@
     <!-- User 4dio.STL: millimetres converted to metres; rotated +90 deg about X, large base face on Z=0; centred XY. -->
     <model name="welding_workpiece_4dio">
       <static>true</static>
-      <pose>0.40 -0.30 0 0 0 0</pose>
+      <pose>0.40 0.029 0 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry><mesh><uri>file:///root/arms_ws/install/piper_gazebo/share/piper_gazebo/meshes/4dio_flat_m.stl</uri></mesh></geometry>
@@ -98,8 +98,8 @@
       </link>
     </model>
 
-    <!-- Calibration board on floor; original STL world backed up in arms_ws/gazebo_backups. -->
-    <include><uri>file:///root/arms_ws/src/robots/piper_ros/src/piper_sim/piper_gazebo/models/charuco_13x9</uri><name>charuco_board_floor</name><pose>0.50 0 0 0 0 0</pose></include>
+    <!-- ChArUco6x8:25mm squares,18mm markers; beside the welding workpiece. -->
+    <include><uri>file:///root/arms_ws/src/robots/piper_ros/src/piper_sim/piper_gazebo/models/charuco_6x8_25mm</uri><name>charuco_board_6x8</name><pose>0.50 -0.25 0 0 0 0</pose></include>
 
   </world>
 </sdf>

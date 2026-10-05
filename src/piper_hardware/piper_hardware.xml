@@ -1,0 +1,5 @@
+<library path="piper_hardware">
+  <class name="piper_hardware/PiperSystem" type="piper_hardware::PiperSystem" base_class_type="hardware_interface::SystemInterface">
+    <description>Position commands with independently measured, freshness-checked CAN feedback.</description>
+  </class>
+</library>
