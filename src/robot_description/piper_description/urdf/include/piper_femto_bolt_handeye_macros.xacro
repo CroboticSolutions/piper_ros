@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <!--
-  Piper + Orbbec Femto Bolt (eye-in-hand; real mount on link5 since 2026-10-05,
-  simulation on link6). The real origin below is relative to that parent link and
-  is stale until the new mount is calibrated (robot_effector_frame:=link5).
+  Piper + Orbbec Femto Bolt (eye-in-hand; mount on link5 since 2026-10-05, real
+  and simulation). Real origin = HE-v8-link5. The simulation (nominal) origin is
+  the same HE-v8 link5 -> camera_color_optical_frame pose re-expressed through the
+  nominal internal camera chain, so the simulated optical frame matches the real one.
 
   Frame names match orbbec_camera's femto_bolt.launch.py defaults (camera_name:=camera):
     camera_base_link, camera_link, camera_color_optical_frame, etc.
@@ -27,11 +28,11 @@
   <xacro:macro name="piper_mount_femto_bolt_handeye" params="parent_link use_nominal_extrinsics:=false">
     <xacro:include filename="$(find orbbec_description)/urdf/femto_bolt.urdf.xacro"/>
     <xacro:femto_bolt prefix="camera" parent="${parent_link}" use_nominal_extrinsics="${use_nominal_extrinsics}">
-      <!-- Preserve the original nominal-chain hand-eye optical pose. The real
+      <!-- Nominal: HE-v8-link5 optical pose through the nominal chain. The real
            mount is re-expressed using this camera's recorded driver extrinsics
            (2026-09-24); internal TFs themselves always come from the driver. -->
-      <origin xyz="${'-0.116960119269 0.004378100746 -0.028825832440' if use_nominal_extrinsics else '-0.044525749544 -0.064654994020 -0.003299954006'}"
-              rpy="${'0.062955579669 -0.945517293938 -0.083284514853' if use_nominal_extrinsics else '1.698973335600 -0.016012269413 -1.559219138477'}"/>
+      <origin xyz="${'-0.044371623019 -0.064359369068 -0.002761697893' if use_nominal_extrinsics else '-0.044525749544 -0.064654994020 -0.003299954006'}"
+              rpy="${'1.698960611174 -0.015341477877 -1.559133329065' if use_nominal_extrinsics else '1.698973335600 -0.016012269413 -1.559219138477'}"/>
     </xacro:femto_bolt>
   </xacro:macro>
 

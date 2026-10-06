@@ -64,12 +64,19 @@
     <parent link="piper_welding_gun"/><child link="arm_tcp"/>
     <!-- Wire tip of 03_welding_gun.stl on the AgileX flange (model geometry, 2026-10-05):
          end-face centre of the Ø3 mm wire, axis 45.3 deg from link6 Z toward +X.
-         TCP +X follows the wire. Same for real robot and simulation. -->
-    <origin xyz="0.039746665881 -0.000003287520 0.111796185844" rpy="0 -0.7801056516 0"/>
+         TCP +X follows the wire. Simulation keeps this model tip. -->
+    <xacro:if value="$(arg simulation)">
+      <origin xyz="0.039746665881 -0.000003287520 0.111796185844" rpy="0 -0.7801056516 0"/>
+    </xacro:if>
+    <!-- Real robot: TCP-v6-pivot (2026-10-06). Wire tip from the spike pivot calibration
+         (Tool TCP GUI, no camera) - 8 mm along the wire (TCP +X) on request (2026-10-06). Model wire direction kept. -->
+    <xacro:unless value="$(arg simulation)">
+      <origin xyz="0.03401 -0.0003 0.10577" rpy="0 -0.7801056516 0"/>
+    </xacro:unless>
   </joint>
   <xacro:if value="${'$(arg wrist_camera)' == 'femto_bolt'}">
     <xacro:include filename="$(find piper_description)/urdf/include/piper_femto_bolt_handeye_macros.xacro"/>
-    <xacro:piper_mount_femto_bolt_handeye parent_link="${'link6' if '$(arg simulation)' == 'true' else '$(arg femto_parent_link)'}"
+    <xacro:piper_mount_femto_bolt_handeye parent_link="$(arg femto_parent_link)"
                                          use_nominal_extrinsics="$(arg simulation)"/>
   </xacro:if>
   <xacro:unless value="${'$(arg wrist_camera)' == 'femto_bolt'}">

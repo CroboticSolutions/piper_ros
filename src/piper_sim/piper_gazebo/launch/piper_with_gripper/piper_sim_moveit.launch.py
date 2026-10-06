@@ -118,7 +118,8 @@ def _configure(context):
                 "--frame-id",
                 "camera_color_frame" if welding_gun else "oak_right_camera_frame",
                 "--child-frame-id",
-                "piper/link6/camera",
+                # Gazebo merges fixed joints: the sensor lives on the camera's parent link.
+                f"piper/{'link5' if wrist_camera == 'femto_bolt' else 'link6'}/camera",
             ],
             parameters=[{"use_sim_time": True}],
             output="log",
