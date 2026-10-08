@@ -80,6 +80,7 @@
     </model>
 
     <!-- User 4dio.STL: millimetres converted to metres; rotated +90 deg about X, large base face on Z=0; centred XY. -->
+    <!-- I profile disabled 2026-10-08, replaced by cylinder_workpiece
     <model name="welding_workpiece_4dio">
       <static>true</static>
       <pose>0.40 0.029 0 0 0 0</pose>
@@ -97,9 +98,31 @@
         </visual>
       </link>
     </model>
+    -->
 
-    <!-- ChArUco6x8:25mm squares,18mm markers; beside the welding workpiece. -->
+    <!-- Cylinder.STL (arm_api2_gui/models): disk D155 x 25 mm; mm -> m, rotated +90 deg about X (Y-up -> Z-up), base on Z=0, centred XY. Same spot as the I profile. -->
+    <model name="cylinder_workpiece">
+      <static>true</static>
+      <pose>0.40 0.029 0 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><mesh><uri>file:///root/arms_ws/install/piper_gazebo/share/piper_gazebo/meshes/cylinder_flat_m.stl</uri></mesh></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><mesh><uri>file:///root/arms_ws/install/piper_gazebo/share/piper_gazebo/meshes/cylinder_flat_m.stl</uri></mesh></geometry>
+          <material>
+            <ambient>0.65 0.68 0.72 1</ambient>
+            <diffuse>0.65 0.68 0.72 1</diffuse>
+            <specular>0.15 0.15 0.15 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ChArUco disabled 2026-10-08
+    ChArUco6x8:25mm squares,18mm markers; beside the welding workpiece.
     <include><uri>file:///root/arms_ws/src/robots/piper_ros/src/piper_sim/piper_gazebo/models/charuco_6x8_25mm</uri><name>charuco_board_6x8</name><pose>0.50 -0.25 0 0 0 0</pose></include>
+    -->
 
   </world>
 </sdf>
