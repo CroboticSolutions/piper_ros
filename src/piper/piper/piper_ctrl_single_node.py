@@ -156,7 +156,7 @@ class PiperRosNode(Node):
             else:
                 self.get_logger().error(f"{self.can_port} is loss")
                 self.get_logger().error(f"exit...")
-                self.stop_callback(None)
+                self.hold(True, f'{self.can_port} lost')
                 rclpy.shutdown()
 
             rate.sleep()
@@ -300,23 +300,39 @@ class PiperRosNode(Node):
         self.guard.set_teaching(msg.data, time.monotonic())
 
     def command_watchdog(self):
-        if self.guard.expired(time.monotonic()):
-            self.stop_callback(None)
+        with self.can_command_lock:
+            now = time.monotonic()
+            if not self.guard.expired(now):
+                return
+            if self.guard.healthy(now):
+                # Normal end of the command stream (ros2_control stopped or restarted).
+                self.hold(False, 'Command stream ended')
+            else:
+                self.hold(True, 'Feedback stale or driver not ready')
 
     def stop_callback(self, _msg):
+        self.hold(True, 'Stop requested on /piper/stop')
+
+    def hold(self, latch, reason):
+        """Stop forwarding commands; the firmware keeps the last MOVE J target.
+
+        Sends no CAN frame: the protocol quick-stop is a damped e-stop under which
+        the arm sinks under gravity, and DisableArm releases it. Never send the 0x02
+        reset automatically. latch=True blocks commands until enable_flag/enable_srv.
+        """
         with self.can_command_lock:
             if self.guard.stopped:
                 return
-            self.guard.stopped = True
             self.guard.active = False
+            # The next command stream must start at the measured pose (CommandGuard.accept).
+            self.guard.synchronized = False
+            if not latch:
+                self.get_logger().warning(f'{reason}; PiPER holds its last target')
+                return
+            self.guard.stopped = True
             self.__enable_flag = False
-            try:
-                # Protocol quick-stop, not DisableArm (which can release the arm).
-                # Never send the 0x02 reset automatically.
-                self.arm.quick_stop()
-            except Exception as exc:
-                self.get_logger().error(f'CAN quick-stop could not be sent: {exc}')
-            self.get_logger().error('Command/feedback watchdog stopped PiPER; explicit recovery required')
+            self.get_logger().error(f'{reason}; PiPER holds its last target (no e-stop sent), '
+                                    'commands blocked until enable_flag/enable_srv')
 
 
     def set_gripper_enabled(self, enabled):

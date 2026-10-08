@@ -9,6 +9,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/empty.hpp"
 
 using namespace std::chrono_literals;
 using hardware_interface::return_type;
@@ -37,6 +38,11 @@ protected:
 </ros2_control></robot>)";
     ASSERT_EQ(hw->on_init(hardware_interface::parse_control_resources_from_urdf(xml).at(0)), CallbackReturn::SUCCESS);
     states = hw->export_state_interfaces(); commands = hw->export_command_interfaces();
+    stop_sub = node->create_subscription<std_msgs::msg::Empty>(
+      "/test/stop", 10, [this](std_msgs::msg::Empty::ConstSharedPtr) {stops++;});
+    // Wait for discovery so that "no stop" cannot pass just because nothing was connected.
+    for (int i = 0; i < 200 && stop_sub->get_publisher_count() == 0; ++i) {std::this_thread::sleep_for(5ms);}
+    ASSERT_GT(stop_sub->get_publisher_count(), 0u);
     running = true;
     thread = std::thread([this]() {
       while (running) {
@@ -60,7 +66,14 @@ protected:
   }
   return_type read() {return hw->read(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.005));}
   return_type write() {return hw->write(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.005));}
+  int stops_received()
+  {
+    for (int i = 0; i < 20; ++i) {rclcpp::spin_some(node); std::this_thread::sleep_for(5ms);}
+    return stops.load();
+  }
   std::atomic<bool> running{false}, publish{true}, ready{true}, invalid{false}, old_stamp{false};
+  std::atomic<int> stops{0};
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr stop_sub;
   std::thread thread;
   rclcpp::Node::SharedPtr node;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr js;
@@ -86,6 +99,17 @@ TEST_F(PiperHardwareTest, LostFeedbackFailsClosed)
   publish = false; std::this_thread::sleep_for(220ms);
   EXPECT_EQ(read(), return_type::ERROR);
   EXPECT_EQ(write(), return_type::ERROR);
+  EXPECT_EQ(stops_received(), 1);
+}
+TEST_F(PiperHardwareTest, DeactivationIsNotAFault)
+{
+  // /piper/stop latches the driver; a normal MoveIt stop/restart must leave it holding.
+  ASSERT_EQ(hw->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  EXPECT_EQ(hw->on_deactivate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  publish = false; std::this_thread::sleep_for(220ms);
+  EXPECT_EQ(read(), return_type::OK);
+  EXPECT_EQ(write(), return_type::OK);
+  EXPECT_EQ(stops_received(), 0);
 }
 TEST_F(PiperHardwareTest, ReplayedOldStampAndMissingJointAreRejected)
 {

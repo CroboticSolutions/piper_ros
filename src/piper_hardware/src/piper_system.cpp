@@ -155,7 +155,11 @@ public:
 
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
-    stop(); active_ = false;
+    // Normal shutdown/restart is not a fault: no /piper/stop. The driver sees the command
+    // stream end and holds the last target without latching.
+    std::lock_guard<std::mutex> lock(mutex_);
+    active_ = false;
+    RCLCPP_INFO(node_->get_logger(), "PiPER hardware deactivated; driver holds the last target");
     return CallbackReturn::SUCCESS;
   }
 
@@ -207,7 +211,7 @@ private:
     if (active_ && !faulted_) {
       faulted_ = true;
       stop_pub_->publish(std_msgs::msg::Empty());
-      RCLCPP_ERROR(node_->get_logger(), "PiPER hardware stopped: deactivation, stale feedback or fault");
+      RCLCPP_ERROR(node_->get_logger(), "PiPER hardware stopped: stale feedback or fault");
     }
   }
   std::vector<std::string> names_;

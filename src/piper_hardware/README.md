@@ -27,14 +27,20 @@ The reader tracks kernel receive timestamps individually for position pairs
 0x2A1 (plus gripper 0x2A8 when configured). A ROS timer cannot refresh stale CAN
 positions. Source and monotonic receipt age are checked again by the hardware
 interface; the default timeout is 0.25 s. Driver faults or stale data return ERROR
-to controller_manager and request a CAN quick-stop. The Python driver independently
-watches command/feedback loss after command acquisition, including manager failure.
-It does not automatically reset faults or disable motors on watchdog expiry.
+to controller_manager and publish `/piper/stop`. Normal deactivation (MoveIt stop or
+restart) does not. The Python driver independently watches command/feedback loss
+after command acquisition, including manager failure.
 
-A CAN quick-stop is a software command, not a safety-rated E-stop. With a severed
-CAN connection software cannot guarantee delivery. Fault recovery requires
-explicit operator recovery of the firmware and reconfiguration/reactivation of the
-controller stack; stale commands are not resumed automatically.
+On any stop the driver only stops forwarding commands; the firmware keeps the last
+MOVE J target with motors enabled. It never sends the CAN quick-stop (a damped
+e-stop under which the arm sinks under gravity), DisableArm or a fault reset.
+- Command stream ended with healthy feedback: hold, then accept a new stream only
+  if it starts at the measured pose (0.02 rad).
+- `/piper/stop`, stale feedback or CAN loss: hold and block commands until
+  `enable_flag`/`enable_srv`, which require healthy feedback.
+
+None of this is a safety-rated E-stop. With a severed CAN connection software
+cannot deliver anything. Stale commands are not resumed automatically.
 
 The standard real launch explicitly sets `require_hardware_feedback=true`.
 Legacy direct/dual/RViz driver entry points retain the opt-out node default for
@@ -80,15 +86,15 @@ From a sourced workspace:
 
 ```bash
 PYTHONPATH=/root/py_global/lib/python3.12/site-packages:$PYTHONPATH python3 -m pytest \
-  src/robots/piper_ros/src/piper/test/test_can_feedback.py \
-  src/robots/piper_ros/src/piper/test/test_driver_commands.py
+  src/piper_ros/src/piper/test/test_can_feedback.py \
+  src/piper_ros/src/piper/test/test_driver_commands.py
 ROS_DOMAIN_ID=87 ./build/piper_hardware/test_piper_system
-ROS_DOMAIN_ID=87 python3 src/robots/piper_ros/src/piper_hardware/test/trajectory_integration.py
+ROS_DOMAIN_ID=87 python3 src/piper_ros/src/piper_hardware/test/trajectory_integration.py
 ROS_DOMAIN_ID=87 PYTHONPATH=/root/py_global/lib/python3.12/site-packages:$PYTHONPATH \
-  python3 src/robots/piper_ros/src/piper_hardware/test/driver_executor_integration.py
+  python3 src/piper_ros/src/piper_hardware/test/driver_executor_integration.py
 ```
 
 Integration scripts assert domain 87 and use synthetic measurements/fake SDKs;
 they never open a CAN port. Tests cover measured startup, true tracking success,
 path/goal rejection, missing/replayed feedback, driver fault, teach cancellation,
-new-pose hold, and prompt quick-stop during an enable service request.
+new-pose hold, and prompt hold (no e-stop frame) during an enable service request.
