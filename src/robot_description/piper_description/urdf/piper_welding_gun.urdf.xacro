@@ -6,6 +6,11 @@
   <!-- Real Femto Bolt mount since 2026-10-05 is on link5 (does not rotate with joint 6).
        Simulation keeps link6 because its nominal extrinsics are expressed there. -->
   <xacro:arg name="femto_parent_link" default="link5"/>
+  <!-- Femto mount calibration (real + nominal origin). Launch files pass the robot's
+       active ~/.ros/calibration/<robot_id>/femto_bolt_handeye/current.yaml; the repo
+       default only applies when that does not exist (calibration_store.py). -->
+  <xacro:arg name="femto_calibration" default="$(find piper_description)/config/calibration/femto_bolt_handeye_default.yaml"/>
+  <xacro:arg name="tcp_calibration" default="$(find piper_description)/config/calibration/welding_gun_tcp_default.yaml"/>
   <xacro:include filename="$(find piper_description)/urdf/piper_no_gripper_description_gz.xacro"/>
 
   <!-- AgileX PiPER flange (STL in mm): mounting face on link6 at Z=0, top recess Ø40.5 x 6 mm. -->
@@ -60,24 +65,21 @@
   </joint>
   <!-- Nominal CAD wire-tip TCP, applied 2026-09-30. TCP +X follows the wire. -->
   <link name="arm_tcp"/>
+  <!-- Welding-gun TCP (real + sim origin). Launch files pass the robot's active
+       ~/.ros/calibration/<robot_id>/welding_gun_tcp/current.yaml; the repo default
+       (config/calibration/welding_gun_tcp_default.yaml) applies when that does not exist.
+       TCP +X follows the wire. -->
+  <xacro:property name="tcp_cal" value="${xacro.load_yaml('$(arg tcp_calibration)')}"/>
+  <xacro:property name="tcp_origin" value="${tcp_cal['sim'] if '$(arg simulation)' == 'true' else tcp_cal['real']}"/>
   <joint name="arm_tcp_joint" type="fixed">
     <parent link="piper_welding_gun"/><child link="arm_tcp"/>
-    <!-- Wire tip of 03_welding_gun.stl on the AgileX flange (model geometry, 2026-10-05):
-         end-face centre of the Ø3 mm wire, axis 45.3 deg from link6 Z toward +X.
-         TCP +X follows the wire. Simulation keeps this model tip. -->
-    <xacro:if value="$(arg simulation)">
-      <origin xyz="0.039746665881 -0.000003287520 0.111796185844" rpy="0 -0.7801056516 0"/>
-    </xacro:if>
-    <!-- Real robot: TCP-v6-pivot (2026-10-06). Wire tip from the spike pivot calibration
-         (Tool TCP GUI, no camera) - 8 mm along the wire (TCP +X) on request (2026-10-06). Model wire direction kept. -->
-    <xacro:unless value="$(arg simulation)">
-      <origin xyz="0.03401 -0.0003 0.10577" rpy="0 -0.7801056516 0"/>
-    </xacro:unless>
+    <origin xyz="${tcp_origin['xyz']}" rpy="${tcp_origin['rpy']}"/>
   </joint>
   <xacro:if value="${'$(arg wrist_camera)' == 'femto_bolt'}">
     <xacro:include filename="$(find piper_description)/urdf/include/piper_femto_bolt_handeye_macros.xacro"/>
     <xacro:piper_mount_femto_bolt_handeye parent_link="$(arg femto_parent_link)"
-                                         use_nominal_extrinsics="$(arg simulation)"/>
+                                         use_nominal_extrinsics="$(arg simulation)"
+                                         calibration_file="$(arg femto_calibration)"/>
   </xacro:if>
   <xacro:unless value="${'$(arg wrist_camera)' == 'femto_bolt'}">
     <xacro:include filename="$(find piper_description)/urdf/include/piper_realsense_d435_handeye_macros.xacro"/>

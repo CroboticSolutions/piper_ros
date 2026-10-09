@@ -34,6 +34,21 @@ from ament_index_python.packages import get_package_share_directory
 from moveit_configs_utils import MoveItConfigsBuilder
 
 
+def _calibration_file(mount, default_name):
+    """Active calibration of this robot for a mount, else the repo default.
+
+    Same convention as hand_eye_calibration/calibration_store.py; GUI Apply
+    writes a new version there and repoints current.yaml.
+    """
+    store = os.path.join(
+        os.path.expanduser(os.environ.get("ARMS_CALIBRATION_DIR", "~/.ros/calibration")),
+        os.environ.get("ARMS_ROBOT_ID", "piper"), mount, "current.yaml")
+    if os.path.exists(store):
+        return store
+    return os.path.join(get_package_share_directory("piper_description"),
+                        "config", "calibration", default_name)
+
+
 def _configure(context):
     no_gripper = LaunchConfiguration("no_gripper").perform(context).lower() in ("true", "1")
     welding_gun = LaunchConfiguration("welding_gun").perform(context).lower() in ("true", "1")
@@ -90,6 +105,15 @@ def _configure(context):
                 TextSubstitution(text=wrist_camera),
             ]
         )
+    calibration_args = {}
+    if wrist_camera == "femto_bolt":
+        calibration_args["femto_calibration"] = _calibration_file(
+            "femto_bolt_handeye", "femto_bolt_handeye_default.yaml")
+    if welding_gun:
+        calibration_args["tcp_calibration"] = _calibration_file(
+            "welding_gun_tcp", "welding_gun_tcp_default.yaml")
+    for key, value in calibration_args.items():
+        xacro_cmd.append(TextSubstitution(text=f" {key}:={value}"))
     robot_description_content = Command(xacro_cmd)
     robot_description = {
         "robot_description": ParameterValue(robot_description_content, value_type=str)
@@ -247,14 +271,20 @@ def _configure(context):
         # Gazebo, RSP, MoveIt and RViz use the same full robot/tool geometry.
         config = (MoveItConfigsBuilder("piper", package_name="piper_no_gripper_moveit")
             .robot_description(file_path=urdf_file, mappings={
-                "simulation_controllers": controllers_yaml, "wrist_camera": wrist_camera})
+                "simulation_controllers": controllers_yaml, "wrist_camera": wrist_camera,
+                **calibration_args})
             .robot_description_semantic(file_path=os.path.join(pkg_gazebo, "config", "piper_welding_gun.srdf"))
             # Same pipelines as the real welding profile; arm_api2 also uses Pilz LIN.
             .planning_pipelines(pipelines=["ompl", "pilz_industrial_motion_planner"],
                                 default_planning_pipeline="ompl")
             .to_moveit_configs())
+        # move_group takes robot_description from robot_state_publisher's topic
+        # (no parameter), and respawns: GUI calibration Apply pushes a new
+        # robot_description and then restarts move_group to load it.
+        move_group_params = config.to_dict()
+        move_group_params.pop("robot_description", None)
         nodes.append(Node(package="moveit_ros_move_group", executable="move_group",
-            output="screen", parameters=[config.to_dict(), {
+            output="screen", respawn=True, respawn_delay=1.0, parameters=[move_group_params, {
                 "use_sim_time": True, "publish_robot_description_semantic": True,
                 "publish_planning_scene": True, "publish_geometry_updates": True,
                 "publish_state_updates": True, "publish_transforms_updates": True,
