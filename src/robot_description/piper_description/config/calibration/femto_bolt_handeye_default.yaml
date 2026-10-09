@@ -1,0 +1,17 @@
+# Repo default for the welding-gun Femto Bolt mount (parent -> camera_base_link).
+# Used only when the robot has no active calibration in
+# ~/.ros/calibration/<robot_id>/femto_bolt_handeye/current.yaml (see
+# hand_eye_calibration/calibration_store.py). GUI Apply never edits this file.
+# Values: HE-v8-link5 as baked into the xacro before the store existed (2026-10-08).
+calibration_id: repo-default-HE-v8-link5
+kind: camera_mount
+parent_link: link5
+child_link: camera_base_link
+# Real robot: through the driver's own depth->colour extrinsics.
+real:
+  xyz: "-0.044525749544 -0.064654994020 -0.003299954006"
+  rpy: "1.698973335600 -0.016012269413 -1.559219138477"
+# Simulation: same optical pose through the nominal femto_bolt chain.
+nominal:
+  xyz: "-0.044371623019 -0.064359369068 -0.002761697893"
+  rpy: "1.698960611174 -0.015341477877 -1.559133329065"

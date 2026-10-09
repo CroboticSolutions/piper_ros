@@ -1,0 +1,16 @@
+# Repo default for the welding-gun TCP (piper_welding_gun -> arm_tcp; arm_tcp +X = wire).
+# Used only when the robot has no active calibration in
+# ~/.ros/calibration/<robot_id>/welding_gun_tcp/current.yaml (see
+# hand_eye_calibration/calibration_store.py). GUI Apply never edits this file.
+calibration_id: repo-default-TCP-v6
+kind: tool_tcp
+parent_link: piper_welding_gun
+child_link: arm_tcp
+# Real robot: TCP-v6 (spike pivot 2026-10-06, then -8 mm along the wire on request).
+real:
+  xyz: "0.03401 -0.0003 0.10577"
+  rpy: "0 -0.7801056516 0"
+# Simulation: wire tip of the 03_welding_gun.stl model (2026-10-05).
+sim:
+  xyz: "0.039746665881 -0.000003287520 0.111796185844"
+  rpy: "0 -0.7801056516 0"

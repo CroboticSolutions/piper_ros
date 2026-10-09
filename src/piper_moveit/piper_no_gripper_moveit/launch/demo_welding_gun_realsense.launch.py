@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
@@ -11,6 +12,21 @@ from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launch_utils import DeclareBooleanLaunchArg, add_debuggable_node
 
 
+def _calibration_file(mount, default_name):
+    """Active calibration of this robot for a mount, else the repo default.
+
+    Same convention as hand_eye_calibration/calibration_store.py; GUI Apply
+    writes a new version there and repoints current.yaml.
+    """
+    store = os.path.join(
+        os.path.expanduser(os.environ.get("ARMS_CALIBRATION_DIR", "~/.ros/calibration")),
+        os.environ.get("ARMS_ROBOT_ID", "piper"), mount, "current.yaml")
+    if os.path.exists(store):
+        return store
+    return os.path.join(get_package_share_directory("piper_description"),
+                        "config", "calibration", default_name)
+
+
 def _moveit_config(wrist_camera: str):
     urdf_xacro = (
         Path(get_package_share_directory("piper_no_gripper_moveit"))
@@ -21,7 +37,12 @@ def _moveit_config(wrist_camera: str):
         MoveItConfigsBuilder("piper", package_name="piper_no_gripper_moveit")
         .robot_description(
             file_path=str(urdf_xacro),
-            mappings={"simulation": "false", "wrist_camera": wrist_camera},
+            mappings={"simulation": "false", "wrist_camera": wrist_camera,
+                      "tcp_calibration": _calibration_file(
+                          "welding_gun_tcp", "welding_gun_tcp_default.yaml"),
+                      **({"femto_calibration": _calibration_file(
+                          "femto_bolt_handeye", "femto_bolt_handeye_default.yaml")}
+                         if wrist_camera == "femto_bolt" else {})},
         )
         .robot_description_semantic(file_path="config/piper_welding_gun.srdf")
         # Same pipelines as the Gazebo welding profile.
@@ -42,7 +63,9 @@ def _launch_setup(context, *args, **kwargs):
     should_publish = LaunchConfiguration("publish_monitored_planning_scene")
     move_group_configuration = {
         "publish_robot_description_semantic": True,
-        "publish_robot_description": True,
+        # robot_state_publisher is the only /robot_description publisher;
+        # move_group reads it from that topic (see below).
+        "publish_robot_description": False,
         "publish_robot_description_kinematics": True,
         "allow_trajectory_execution": LaunchConfiguration("allow_trajectory_execution"),
         "capabilities": ParameterValue(LaunchConfiguration("capabilities"), value_type=str),
@@ -77,12 +100,19 @@ def _launch_setup(context, *args, **kwargs):
             parameters=[moveit_config.robot_description, {"use_sim_time": False}],
         )
     )
+    # No robot_description parameter: move_group takes it from
+    # robot_state_publisher's topic and respawns, so GUI calibration Apply can
+    # push a new robot_description and restart only move_group.
+    move_group_params = moveit_config.to_dict()
+    move_group_params.pop("robot_description", None)
     add_debuggable_node(
         sink,
         package="moveit_ros_move_group",
         executable="move_group",
         output="screen",
-        parameters=[moveit_config.to_dict(), move_group_configuration],
+        respawn=True,
+        respawn_delay=1.0,
+        parameters=[move_group_params, move_group_configuration],
     )
     sink.add_action(
         Node(
