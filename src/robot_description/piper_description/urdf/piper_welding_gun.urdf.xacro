@@ -59,9 +59,13 @@
       <inertia ixx="0.0008" ixy="0" ixz="0" iyy="0.0008" iyz="0" izz="0.0003"/>
     </inertial>
   </link>
+  <!-- Real robot only: gun 1.048 mm further out along the flange axis (link6 z), so the
+       CAD wire tip touching the table reads z = -20.0 mm (base on a 2 cm plate); measured
+       2026-10-14 at joints (-0.009, 1.599, -0.002, 0.064, -0.733, 0). Simulation keeps the CAD mount. -->
+  <xacro:property name="gun_mount_z" value="${0.001048 if '$(arg simulation)' == 'false' else 0.0}"/>
   <joint name="piper_welding_gun_mount" type="fixed">
     <parent link="piper_flange"/><child link="piper_welding_gun"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 ${gun_mount_z}" rpy="0 0 0"/>
   </joint>
   <!-- Nominal CAD wire-tip TCP, applied 2026-09-30. TCP +X follows the wire. -->
   <link name="arm_tcp"/>

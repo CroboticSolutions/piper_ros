@@ -9,8 +9,13 @@
   robot_state_publisher owns the camera TF tree (same pattern as OAK-D Pro W).
 
   Calibration: eye-in-hand link6 → camera_color_optical_frame from arm_api2 GUI
-  hand-eye calibration (2026-09-14). The origin below is converted from that
-  optical-frame estimate to the D435 bottom screw frame used by sensor_d435.
+  hand-eye calibration (2026-09-14); replaced 2026-10-13 by HE-v9-D435-Intrinsic-26
+  (run 20261013_095104, FORCED on user request: acceptance failed, position RMS 5.20 mm), then on
+  2026-10-14 by the camera_joint estimated together with the PiPER joint2..5 zero offsets
+  (robot_calibration, runs 20261013_090057/095104/145212, 70 views; link6 -> optical
+  -87.8/34.4/46.1 mm; diagnostics/piper_joint_offsets_20261013). This mount is only valid
+  with those offsets in piper_description.xacro. Previous origin (HE-v9):
+  xyz="-0.083398718061 -0.000596015924 0.008566408033" rpy="-0.031901801676 -1.216619402843 0.033971246659".
   Re-calibrate with hand_eye_calibration and update the fixed joint origin when
   the physical mount or camera changes.
 -->
@@ -24,7 +29,7 @@
       use_nominal_extrinsics="true"
       add_plug="false"
       use_mesh="${use_mesh}">
-      <origin xyz="-0.081443840090 -0.001060325492 0.040086067573" rpy="-0.007029573507 -1.205748634070 -0.013835835278"/>
+      <origin xyz="-0.07895832 0.00190165 0.03214706" rpy="-0.03568854 -1.20919161 0.06005394"/>
     </xacro:sensor_d435>
   </xacro:macro>
 

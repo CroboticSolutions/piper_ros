@@ -129,7 +129,8 @@
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="1.5708 -0.1359 -3.1416" />
+      rpy="1.570800004 -0.144020257 3.141585277" />
+      <!-- Zero offset +0.465 deg from camera kinematic calibration 2026-10-13 (robot_calibration, 70 D435 views; diagnostics/piper_joint_offsets_20261013): origin = nominal * Rz(offset), nominal rpy="1.5708 -0.1359 -3.1416". Revert: diagnostics/piper_joint_offsets_20261013/apply_20261014/before_piper_description.xacro -->
       <!-- rpy="1.5708 -0.10095-0.03490659 -3.1416" /> -->
     <parent
       link="link1" />
@@ -179,7 +180,8 @@
     type="revolute">
     <origin
       xyz="0.28503 0 0"
-      rpy="0 0 -1.7939" />
+      rpy="0 0 -1.771126297" />
+      <!-- Zero offset +1.305 deg from camera kinematic calibration 2026-10-13 (robot_calibration, 70 D435 views; diagnostics/piper_joint_offsets_20261013): origin = nominal * Rz(offset), nominal rpy="0 0 -1.7939". Revert: diagnostics/piper_joint_offsets_20261013/apply_20261014/before_piper_description.xacro -->
       <!-- rpy="0 0 -1.759-0.03490659" /> -->
     <parent
       link="link2" />
@@ -229,7 +231,8 @@
     type="revolute">
     <origin
       xyz="-0.021984 -0.25075 0"
-      rpy="1.5708 0 0" />
+      rpy="1.5708 -0.008825978 -0.000000032" />
+      <!-- Zero offset +0.506 deg from camera kinematic calibration 2026-10-13 (robot_calibration, 70 D435 views; diagnostics/piper_joint_offsets_20261013): origin = nominal * Rz(offset), nominal rpy="1.5708 0 0". Revert: diagnostics/piper_joint_offsets_20261013/apply_20261014/before_piper_description.xacro -->
     <parent
       link="link3" />
     <child
@@ -278,7 +281,8 @@
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="-1.5708 0 0" />
+      rpy="-1.5708 -0.007785459 0.000000029" />
+      <!-- Zero offset -0.446 deg from camera kinematic calibration 2026-10-13 (robot_calibration, 70 D435 views; diagnostics/piper_joint_offsets_20261013): origin = nominal * Rz(offset), nominal rpy="-1.5708 0 0". Revert: diagnostics/piper_joint_offsets_20261013/apply_20261014/before_piper_description.xacro -->
     <parent
       link="link4" />
     <child
@@ -390,8 +394,9 @@
     name="joint6_to_gripper_base"
     type="fixed">
     <origin
-      xyz="0 0 0"
+      xyz="0 0 0.0058"
       rpy="0 0 0" />
+    <!-- Gripper 5.8 mm further along the flange axis than the official model (mounting spacer/bracket), 2026-10-14: set so the closed fingers resting on the table (2 cm below base_link, riser) meet it with the gripper pointing straight down; the ruler gave 145 mm flange -> tips (9.2 mm), which overshot by 3.4 mm. Was xyz="0 0 0". Gripper tilt is not modelled; refine with a Tool TCP pivot. -->
     <parent
       link="link6" />
     <child

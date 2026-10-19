@@ -4,6 +4,21 @@
   xmlns:xacro="http://ros.org/wiki/xacro">
 <xacro:arg name="simulation" default="true"/>
 <xacro:arg name="wrist_camera" default="gazebo_oak"/>
+<!-- PiPER joint2..5 zero offsets (camera kinematic calibration 2026-10-13/14, robot_calibration, 70 D435 views;
+     diagnostics/piper_joint_offsets_20261013): origin = nominal * Rz(offset). Real robot only (simulation:=false);
+     Gazebo keeps the nominal origins. Same values as piper_description.xacro. -->
+<xacro:if value="$(arg simulation)">
+  <xacro:property name="joint2_origin_rpy" value="1.5708 -0.1359 -3.1416"/>
+  <xacro:property name="joint3_origin_rpy" value="0 0 -1.7939"/>
+  <xacro:property name="joint4_origin_rpy" value="1.5708 0 0"/>
+  <xacro:property name="joint5_origin_rpy" value="-1.5708 0 0"/>
+</xacro:if>
+<xacro:unless value="$(arg simulation)">
+  <xacro:property name="joint2_origin_rpy" value="1.570800004 -0.144020257 3.141585277"/>  <!-- +0.465 deg -->
+  <xacro:property name="joint3_origin_rpy" value="0 0 -1.771126297"/>  <!-- +1.305 deg -->
+  <xacro:property name="joint4_origin_rpy" value="1.5708 -0.008825978 -0.000000032"/>  <!-- +0.506 deg -->
+  <xacro:property name="joint5_origin_rpy" value="-1.5708 -0.007785459 0.000000029"/>  <!-- -0.446 deg -->
+</xacro:unless>
 <!-- world -->
   <!-- Finishes estimated from https://global.agilex.ai/products/piper:
        black joint housings/base, graphite arms, metallic tool flange. -->
@@ -126,7 +141,7 @@
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="1.5708 -0.1359 -3.1416" />
+      rpy="${joint2_origin_rpy}" />
     <parent
       link="link1" />
     <child
@@ -174,7 +189,7 @@
     type="revolute">
     <origin
       xyz="0.28503 0 0"
-      rpy="0 0 -1.7939" />
+      rpy="${joint3_origin_rpy}" />
     <parent
       link="link2" />
     <child
@@ -222,7 +237,7 @@
     type="revolute">
     <origin
       xyz="-0.021984 -0.25075 0"
-      rpy="1.5708 0 0" />
+      rpy="${joint4_origin_rpy}" />
     <parent
       link="link3" />
     <child
@@ -270,7 +285,7 @@
     type="revolute">
     <origin
       xyz="0 0 0"
-      rpy="-1.5708 0 0" />
+      rpy="${joint5_origin_rpy}" />
     <parent
       link="link4" />
     <child
