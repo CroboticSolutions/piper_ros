@@ -3,8 +3,9 @@
   <xacro:arg name="simulation" default="true"/>
   <xacro:arg name="simulation_controllers" default=""/>
   <xacro:arg name="wrist_camera" default="gazebo_realsense"/>
-  <!-- Real Femto Bolt mount since 2026-10-05 is on link5 (does not rotate with joint 6).
-       Simulation keeps link6 because its nominal extrinsics are expressed there. -->
+  <!-- Femto Bolt parent link (link5: does not rotate with joint 6; link6: flange).
+       The active calibration's `parent_link` wins (GUI hand-eye picks the link and
+       Apply stores it); this default is only for calibration files without one. -->
   <xacro:arg name="femto_parent_link" default="link5"/>
   <!-- Femto mount calibration (real + nominal origin). Launch files pass the robot's
        active ~/.ros/calibration/<robot_id>/femto_bolt_handeye/current.yaml; the repo
@@ -81,7 +82,7 @@
   </joint>
   <xacro:if value="${'$(arg wrist_camera)' == 'femto_bolt'}">
     <xacro:include filename="$(find piper_description)/urdf/include/piper_femto_bolt_handeye_macros.xacro"/>
-    <xacro:piper_mount_femto_bolt_handeye parent_link="$(arg femto_parent_link)"
+    <xacro:piper_mount_femto_bolt_handeye default_parent_link="$(arg femto_parent_link)"
                                          use_nominal_extrinsics="$(arg simulation)"
                                          calibration_file="$(arg femto_calibration)"/>
   </xacro:if>

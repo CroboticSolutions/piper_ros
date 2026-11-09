@@ -16,7 +16,7 @@
 <xacro:unless value="$(arg simulation)">
   <xacro:property name="joint2_origin_rpy" value="1.570800004 -0.144020257 3.141585277"/>  <!-- +0.465 deg -->
   <xacro:property name="joint3_origin_rpy" value="0 0 -1.771126297"/>  <!-- +1.305 deg -->
-  <xacro:property name="joint4_origin_rpy" value="1.5708 -0.008825978 -0.000000032"/>  <!-- +0.506 deg -->
+  <xacro:property name="joint4_origin_rpy" value="1.570800000 -0.018425289 -0.000000067"/>  <!-- +1.056 deg: +0.506 (2026-10-13) +0.55 (static camera, 2026-11-02) -->
   <xacro:property name="joint5_origin_rpy" value="-1.5708 -0.007785459 0.000000029"/>  <!-- -0.446 deg -->
 </xacro:unless>
 <!-- world -->

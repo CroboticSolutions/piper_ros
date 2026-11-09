@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <!--
-  Piper + Orbbec Femto Bolt (eye-in-hand; mount on link5 since 2026-10-05, real
-  and simulation).
+  Piper + Orbbec Femto Bolt (eye-in-hand; on link5 or link6, real and simulation).
+  The parent link is the calibration file's `parent_link` (default_parent_link
+  when the file has none), so a version calibrated on link6 mounts on link6.
 
-  The mount origin (parent_link -> camera_base_link) is NOT written here. It is
+  The mount origin (parent link -> camera_base_link) is NOT written here. It is
   loaded from calibration_file, a YAML with a `real` and a `nominal` origin:
     - normally the robot's active calibration
       ~/.ros/calibration/<robot_id>/femto_bolt_handeye/current.yaml, written by
@@ -22,8 +23,10 @@
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_femto_bolt_attachment_defs">
 
-  <xacro:macro name="piper_mount_femto_bolt_handeye" params="parent_link calibration_file use_nominal_extrinsics:=false">
+  <xacro:macro name="piper_mount_femto_bolt_handeye" params="default_parent_link calibration_file use_nominal_extrinsics:=false">
     <xacro:property name="femto_cal" value="${xacro.load_yaml(calibration_file)}"/>
+    <!-- The origin is relative to the link the camera was calibrated on (link5 or link6). -->
+    <xacro:property name="parent_link" value="${femto_cal['parent_link'] if 'parent_link' in femto_cal else default_parent_link}"/>
     <xacro:property name="femto_origin" value="${femto_cal['nominal'] if use_nominal_extrinsics else femto_cal['real']}"/>
     <xacro:include filename="$(find orbbec_description)/urdf/femto_bolt.urdf.xacro"/>
     <xacro:femto_bolt prefix="camera" parent="${parent_link}" use_nominal_extrinsics="${use_nominal_extrinsics}">
