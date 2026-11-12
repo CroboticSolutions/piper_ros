@@ -63,9 +63,12 @@ gripper_controller:
     # free moves. Weld segments get a geometric 3 mm TCP following-error check in the planner.
     constraints:
       goal_time: 2.0
+      # 0 = not checked. Closing on an object stops the finger short of the 1 mm close
+      # stroke: with 0.01 / 0.002 the controller aborted and the close service reported
+      # failure while the object was held. The grip is confirmed from gripper_state.
       joint7:
-        trajectory: 0.01
-        goal: 0.002
+        trajectory: 0.0
+        goal: 0.0
 joint_state_broadcaster:
   ros__parameters:
     use_local_topics: true
