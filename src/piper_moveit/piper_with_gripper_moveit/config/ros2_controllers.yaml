@@ -24,26 +24,29 @@ arm_controller:
     - velocity
     interpolate_from_desired_state: false
     set_last_command_interface_value_as_state_on_activation: false
+    # trajectory: per-joint time-based path tolerance. 0.05 rad (was 0.1, ~30-40 mm at the TCP):
+    # PiPER J5 lags ~74 ms equivalent (2026-09-30), ~0.037 rad at 0.5 rad/s, so tighter aborts
+    # free moves. Weld segments get a geometric 3 mm TCP following-error check in the planner.
     constraints:
       goal_time: 2.0
       stopped_velocity_tolerance: 0.02
       joint1:
-        trajectory: 0.1
+        trajectory: 0.05
         goal: 0.01
       joint2:
-        trajectory: 0.1
+        trajectory: 0.05
         goal: 0.01
       joint3:
-        trajectory: 0.1
+        trajectory: 0.05
         goal: 0.01
       joint4:
-        trajectory: 0.1
+        trajectory: 0.05
         goal: 0.01
       joint5:
-        trajectory: 0.1
+        trajectory: 0.05
         goal: 0.01
       joint6:
-        trajectory: 0.1
+        trajectory: 0.05
         goal: 0.01
 gripper_controller:
   ros__parameters:
@@ -55,6 +58,9 @@ gripper_controller:
     - position
     interpolate_from_desired_state: false
     set_last_command_interface_value_as_state_on_activation: false
+    # trajectory: per-joint time-based path tolerance. 0.05 rad (was 0.1, ~30-40 mm at the TCP):
+    # PiPER J5 lags ~74 ms equivalent (2026-09-30), ~0.037 rad at 0.5 rad/s, so tighter aborts
+    # free moves. Weld segments get a geometric 3 mm TCP following-error check in the planner.
     constraints:
       goal_time: 2.0
       joint7:
