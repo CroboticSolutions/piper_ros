@@ -49,23 +49,41 @@ def _calibration_file(mount, default_name):
                         "config", "calibration", default_name)
 
 
+def _camera_parent_link(wrist_camera, calibration_args):
+    """Link the wrist camera hangs on. Gazebo merges fixed joints, so the sensor's
+    scoped frame is piper/<that link>/camera. Femto/Gemini: the calibration's
+    parent_link (link5 or link6, as the xacro reads it), else the xacro default link5."""
+    path = calibration_args.get({"femto_bolt": "femto_calibration",
+                                 "gemini_336l": "gemini_calibration"}.get(wrist_camera, ""))
+    if path is None:
+        return "link6"
+    try:
+        import yaml
+        with open(path) as f:
+            return (yaml.safe_load(f) or {}).get("parent_link") or "link5"
+    except OSError:
+        return "link5"
+
+
 def _configure(context):
     no_gripper = LaunchConfiguration("no_gripper").perform(context).lower() in ("true", "1")
     welding_gun = LaunchConfiguration("welding_gun").perform(context).lower() in ("true", "1")
     no_gripper = no_gripper or welding_gun
     launch_rviz = LaunchConfiguration("launch_rviz").perform(context).lower() in ("true", "1")
     wrist_camera = LaunchConfiguration("wrist_camera").perform(context).strip()
-    _welding_gun_cameras = ("gazebo_realsense", "femto_bolt")
+    _welding_gun_cameras = ("gazebo_realsense", "femto_bolt", "gemini_336l")
     if welding_gun and wrist_camera not in _welding_gun_cameras:
         raise RuntimeError(
-            f"PIPER WELDING GUN requires wrist_camera:=gazebo_realsense or femto_bolt, got {wrist_camera!r}"
+            "PIPER WELDING GUN requires wrist_camera:=gazebo_realsense, femto_bolt or gemini_336l, "
+            f"got {wrist_camera!r}"
         )
     if not welding_gun and wrist_camera in _welding_gun_cameras:
         raise RuntimeError(f"wrist_camera:={wrist_camera} requires welding_gun:=true")
-    if wrist_camera not in ("gazebo_oak", "gazebo_realsense", "femto_bolt", "oak_d_pro_w", "none"):
+    if wrist_camera not in ("gazebo_oak", "gazebo_realsense", "femto_bolt", "gemini_336l",
+                            "oak_d_pro_w", "none"):
         raise RuntimeError(
             f"unsupported wrist_camera={wrist_camera!r}; "
-            "expected gazebo_oak, gazebo_realsense, femto_bolt, oak_d_pro_w, or none"
+            "expected gazebo_oak, gazebo_realsense, femto_bolt, gemini_336l, oak_d_pro_w, or none"
         )
     no_gz_camera = wrist_camera in ("oak_d_pro_w", "none")
 
@@ -109,6 +127,9 @@ def _configure(context):
     if wrist_camera == "femto_bolt":
         calibration_args["femto_calibration"] = _calibration_file(
             "femto_bolt_handeye", "femto_bolt_handeye_default.yaml")
+    if wrist_camera == "gemini_336l":
+        calibration_args["gemini_calibration"] = _calibration_file(
+            "gemini_336l_handeye", "gemini_336l_handeye_default.yaml")
     if welding_gun:
         calibration_args["tcp_calibration"] = _calibration_file(
             "welding_gun_tcp", "welding_gun_tcp_default.yaml")
@@ -143,7 +164,7 @@ def _configure(context):
                 "camera_color_frame" if welding_gun else "oak_right_camera_frame",
                 "--child-frame-id",
                 # Gazebo merges fixed joints: the sensor lives on the camera's parent link.
-                f"piper/{'link5' if wrist_camera == 'femto_bolt' else 'link6'}/camera",
+                f"piper/{_camera_parent_link(wrist_camera, calibration_args)}/camera",
             ],
             parameters=[{"use_sim_time": True}],
             output="log",
@@ -245,8 +266,8 @@ def _configure(context):
     resource_paths = os.pathsep.join(filter(None, [
         os.environ.get("GZ_SIM_RESOURCE_PATH", ""),
         os.path.dirname(get_package_share_directory("piper_description")),
-        os.path.dirname(get_package_share_directory("realsense2_description")) if (welding_gun and wrist_camera != "femto_bolt") else "",
-        os.path.dirname(get_package_share_directory("orbbec_description")) if (welding_gun and wrist_camera == "femto_bolt") else "",
+        os.path.dirname(get_package_share_directory("realsense2_description")) if (welding_gun and wrist_camera == "gazebo_realsense") else "",
+        os.path.dirname(get_package_share_directory("orbbec_description")) if (welding_gun and wrist_camera in ("femto_bolt", "gemini_336l")) else "",
     ]))
     nodes = [
         SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", resource_paths),

@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<!--
+  Piper + Orbbec Gemini 336L (eye-in-hand; on link5 or link6, real and simulation).
+  Same contract as piper_femto_bolt_handeye_macros.xacro:
+
+  The parent link is the calibration file's `parent_link` (default_parent_link when
+  the file has none). The mount origin (parent link -> <prefix>_link) is loaded from
+  calibration_file, a YAML with a `real` and a `nominal` origin:
+    - normally the robot's active calibration
+      ~/.ros/calibration/<robot_id>/gemini_336l_handeye/current.yaml, written by
+      GUI Apply / welding_gun_apply_cli (camera option gemini_336l)
+      (hand_eye_calibration/calibration_store.py);
+    - otherwise piper_description/config/calibration/gemini_336l_handeye_default.yaml.
+
+  <prefix>_link is the Gemini 330-series driver's root frame (left IR / depth origin).
+  Real hardware (use_nominal_extrinsics false): robot_state_publisher owns only the
+  mount; the Orbbec driver (gemini_330_series.launch.py camera_name:=<prefix>,
+  publish_tf:=true) publishes the calibrated internal frames. The GUI runs the real
+  camera with prefix "gemini" (topics /gemini/..., frames gemini_*).
+  Simulation (use_nominal_extrinsics true): the nominal internal chain below, values
+  from orbbec_description/urdf/gemini_335_L_336_L.urdf.xacro (live driver on the lab
+  unit, 2026-11-16: link -> colour optical 0 -0.024 0, i.e. matches within 0.3 mm).
+  The simulated stack uses prefix "camera" so the shared Gazebo wrist sensors
+  (d435_gazebo_sensors on camera_color_frame / camera_depth_frame) attach to it.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="piper_gemini_336l_attachment_defs">
+
+  <xacro:macro name="piper_mount_gemini_336l_handeye"
+               params="default_parent_link calibration_file prefix:=gemini use_nominal_extrinsics:=false">
+    <xacro:property name="gemini_cal" value="${xacro.load_yaml(calibration_file)}"/>
+    <xacro:property name="parent_link" value="${gemini_cal['parent_link'] if 'parent_link' in gemini_cal else default_parent_link}"/>
+    <xacro:property name="gemini_origin" value="${gemini_cal['nominal'] if use_nominal_extrinsics else gemini_cal['real']}"/>
+    <xacro:property name="gemini_mesh" value="package://orbbec_description/meshes/gemini335L_336L/base_link.STL"/>
+
+    <joint name="${prefix}_mount_joint" type="fixed">
+      <parent link="${parent_link}"/>
+      <child link="${prefix}_link"/>
+      <origin xyz="${gemini_origin['xyz']}" rpy="${gemini_origin['rpy']}"/>
+    </joint>
+    <link name="${prefix}_link">
+      <visual>
+        <origin xyz="-0.011715 -0.0475 -0.014311" rpy="0 0 0"/>
+        <geometry><mesh filename="${gemini_mesh}"/></geometry>
+        <material name="gemini_336l_black"><color rgba="0.1 0.1 0.1 1"/></material>
+      </visual>
+      <!-- Like the gun: no collision geometry on the real robot (operator request 2026-10-05). -->
+      <xacro:if value="${use_nominal_extrinsics}">
+        <collision>
+          <origin xyz="-0.011715 -0.0475 -0.014311" rpy="0 0 0"/>
+          <geometry><mesh filename="${gemini_mesh}"/></geometry>
+        </collision>
+      </xacro:if>
+      <inertial>
+        <origin xyz="0.0029 0.0006 0.0141"/>
+        <mass value="0.12"/>
+        <inertia ixx="0.00015" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00015"/>
+      </inertial>
+    </link>
+
+    <xacro:if value="${use_nominal_extrinsics}">
+      <link name="${prefix}_depth_frame"/>
+      <joint name="${prefix}_depth_joint" type="fixed">
+        <parent link="${prefix}_link"/><child link="${prefix}_depth_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+      <link name="${prefix}_depth_optical_frame"/>
+      <joint name="${prefix}_depth_optical_joint" type="fixed">
+        <parent link="${prefix}_depth_frame"/><child link="${prefix}_depth_optical_frame"/>
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+      </joint>
+      <link name="${prefix}_left_ir_frame"/>
+      <joint name="${prefix}_left_ir_joint" type="fixed">
+        <parent link="${prefix}_depth_frame"/><child link="${prefix}_left_ir_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+      <link name="${prefix}_left_ir_optical_frame"/>
+      <joint name="${prefix}_left_ir_optical_joint" type="fixed">
+        <parent link="${prefix}_left_ir_frame"/><child link="${prefix}_left_ir_optical_frame"/>
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+      </joint>
+      <link name="${prefix}_right_ir_frame"/>
+      <joint name="${prefix}_right_ir_joint" type="fixed">
+        <parent link="${prefix}_depth_frame"/><child link="${prefix}_right_ir_frame"/>
+        <origin xyz="0 -0.095 0" rpy="0 0 0"/>
+      </joint>
+      <link name="${prefix}_right_ir_optical_frame"/>
+      <joint name="${prefix}_right_ir_optical_joint" type="fixed">
+        <parent link="${prefix}_right_ir_frame"/><child link="${prefix}_right_ir_optical_frame"/>
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+      </joint>
+      <link name="${prefix}_color_frame"/>
+      <joint name="${prefix}_color_joint" type="fixed">
+        <parent link="${prefix}_depth_frame"/><child link="${prefix}_color_frame"/>
+        <origin xyz="0 -0.02375 0" rpy="0.0010157 0 0"/>
+      </joint>
+      <link name="${prefix}_color_optical_frame"/>
+      <joint name="${prefix}_color_optical_joint" type="fixed">
+        <parent link="${prefix}_color_frame"/><child link="${prefix}_color_optical_frame"/>
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+      </joint>
+    </xacro:if>
+  </xacro:macro>
+
+</robot>

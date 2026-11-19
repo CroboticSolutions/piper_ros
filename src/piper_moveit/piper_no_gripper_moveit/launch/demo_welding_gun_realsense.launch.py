@@ -42,7 +42,10 @@ def _moveit_config(wrist_camera: str):
                           "welding_gun_tcp", "welding_gun_tcp_default.yaml"),
                       **({"femto_calibration": _calibration_file(
                           "femto_bolt_handeye", "femto_bolt_handeye_default.yaml")}
-                         if wrist_camera == "femto_bolt" else {})},
+                         if wrist_camera == "femto_bolt" else {}),
+                      **({"gemini_calibration": _calibration_file(
+                          "gemini_336l_handeye", "gemini_336l_handeye_default.yaml")}
+                         if wrist_camera == "gemini_336l" else {})},
         )
         .robot_description_semantic(file_path="config/piper_welding_gun.srdf")
         # Same pipelines as the Gazebo welding profile.
@@ -54,7 +57,7 @@ def _moveit_config(wrist_camera: str):
 
 def _launch_setup(context, *args, **kwargs):
     # Selects the wrist-mounted camera's hand-eye macro in piper_welding_gun.urdf.xacro
-    # ("realsense_d435" default vs. "femto_bolt") -- see that file's xacro:if/unless.
+    # ("realsense_d435" default vs. "femto_bolt" / "gemini_336l") -- see that file's xacro:if/unless.
     # Resolved here (OpaqueFunction) because MoveItConfigsBuilder needs a plain
     # string at Python build time, not a deferred LaunchConfiguration substitution.
     wrist_camera = LaunchConfiguration("wrist_camera").perform(context)

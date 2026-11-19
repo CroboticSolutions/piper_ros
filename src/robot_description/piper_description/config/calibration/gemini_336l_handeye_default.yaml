@@ -1,0 +1,21 @@
+# Repo default for the welding-gun Orbbec Gemini 336L mount (parent -> gemini_link /
+# camera_link in simulation). Used only when the robot has no active calibration in
+# ~/.ros/calibration/<robot_id>/gemini_336l_handeye/current.yaml (see
+# hand_eye_calibration/calibration_store.py). GUI Apply never edits this file.
+#
+# PLACEHOLDER, NOT A CALIBRATION (2026-11-16): the Gemini colour optical frame is put
+# exactly where the Femto Bolt's is in femto_bolt_handeye_default.yaml (HE-v8-link5),
+# i.e. it assumes the Gemini sits on the Femto bracket. Run the GUI hand-eye
+# calibration on the real robot and Apply before trusting any camera-derived pose.
+calibration_id: repo-default-placeholder-femto-pose-link5
+kind: camera_mount
+parent_link: link5
+child_link: gemini_link
+# Real robot: through the Gemini's link -> colour optical (live driver, 0 -0.024 0).
+real:
+  xyz: "-0.063393451035 -0.099238533663 -0.012244701642"
+  rpy: "1.697970417733 -0.016683059855 -1.559304957367"
+# Simulation: same optical pose through the nominal chain of piper_gemini_336l_handeye_macros.
+nominal:
+  xyz: "-0.063236547752 -0.098938517876 -0.011729248654"
+  rpy: "1.697957635600 -0.016012269414 -1.559219138478"

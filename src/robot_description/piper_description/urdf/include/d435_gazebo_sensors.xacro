@@ -4,7 +4,9 @@
        Nominal rectified pinhole intrinsics; not a per-device factory calibration.
        RGB amplifier noise is an adjustable approximation, not a measured D435 fit. -->
   <xacro:arg name="d435_rgb_noise_stddev" default="0.002"/>
-  <xacro:macro name="d435_gazebo_sensors">
+  <!-- Optics default to the D435; other wrist cameras (Gemini 336L) pass their own FOV/size
+       but keep the topics, so the depth processor and the GUI sim profile stay the same. -->
+  <xacro:macro name="d435_gazebo_sensors" params="color_hfov_deg:=69.4 color_vfov_deg:=42.5 color_width:=1920 color_height:=1080 depth_hfov_deg:=87 depth_vfov_deg:=58 depth_width:=1280 depth_height:=720">
     <gazebo reference="camera_color_frame">
       <sensor name="camera" type="camera">
         <topic>/piper/d435/color/image</topic>
@@ -12,12 +14,12 @@
         <camera>
           <camera_info_topic>/piper/d435/color/camera_info</camera_info_topic>
           <optical_frame_id>camera_color_optical_frame</optical_frame_id>
-          <horizontal_fov>${69.4 * pi / 180}</horizontal_fov>
-          <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+          <horizontal_fov>${color_hfov_deg * pi / 180}</horizontal_fov>
+          <image><width>${color_width}</width><height>${color_height}</height><format>R8G8B8</format></image>
           <clip><near>0.05</near><far>20</far></clip>
           <lens><intrinsics>
-            <fx>${960 / tan(69.4 * pi / 360)}</fx><fy>${540 / tan(42.5 * pi / 360)}</fy>
-            <cx>960</cx><cy>540</cy><s>0</s>
+            <fx>${color_width / 2 / tan(color_hfov_deg * pi / 360)}</fx><fy>${color_height / 2 / tan(color_vfov_deg * pi / 360)}</fy>
+            <cx>${color_width / 2}</cx><cy>${color_height / 2}</cy><s>0</s>
           </intrinsics></lens>
           <noise><type>gaussian</type><mean>0</mean><stddev>$(arg d435_rgb_noise_stddev)</stddev></noise>
         </camera>
@@ -30,14 +32,14 @@
         <camera>
           <camera_info_topic>/piper/d435/depth/camera_info</camera_info_topic>
           <optical_frame_id>camera_depth_optical_frame</optical_frame_id>
-          <horizontal_fov>${87 * pi / 180}</horizontal_fov>
-          <image><width>1280</width><height>720</height><format>R_FLOAT32</format></image>
+          <horizontal_fov>${depth_hfov_deg * pi / 180}</horizontal_fov>
+          <image><width>${depth_width}</width><height>${depth_height}</height><format>R_FLOAT32</format></image>
           <!-- Geometry is rendered from 5 cm so near objects still occlude.
                The depth processor applies the HD minimum measurable depth. -->
           <clip><near>0.05</near><far>10</far></clip>
           <lens><intrinsics>
-            <fx>${640 / tan(87 * pi / 360)}</fx><fy>${360 / tan(58 * pi / 360)}</fy>
-            <cx>640</cx><cy>360</cy><s>0</s>
+            <fx>${depth_width / 2 / tan(depth_hfov_deg * pi / 360)}</fx><fy>${depth_height / 2 / tan(depth_vfov_deg * pi / 360)}</fy>
+            <cx>${depth_width / 2}</cx><cy>${depth_height / 2}</cy><s>0</s>
           </intrinsics></lens>
         </camera>
       </sensor>
