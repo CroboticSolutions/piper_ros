@@ -2,15 +2,16 @@
 # Used only when the robot has no active calibration in
 # ~/.ros/calibration/<robot_id>/welding_gun_tcp/current.yaml (see
 # hand_eye_calibration/calibration_store.py). GUI Apply never edits this file.
-calibration_id: repo-default-TCP-v6
+calibration_id: repo-default-TCP-v9
 kind: tool_tcp
 parent_link: piper_welding_gun
 child_link: arm_tcp
-# Real robot: TCP-v6 (spike pivot 2026-10-06, then -8 mm along the wire on request).
+# WeldTorch_Assembly.stl wire tip from CAD (2026-11-24, mesh turned 135 deg about the
+# flange axis): wire axis (0.7132, 0, 0.7010) in link6, 45.5 deg from the flange axis.
+# TCP = nozzle end + 15 mm wire stickout. Real robot uses this until a TCP calibration is applied.
 real:
-  xyz: "0.03401 -0.0003 0.10577"
-  rpy: "0 -0.7801056516 0"
-# Simulation: wire tip of the 03_welding_gun.stl model (2026-10-05).
+  xyz: "0.000275 0 0.176808"
+  rpy: "0 -0.7767800740 0"
 sim:
-  xyz: "0.039746665881 -0.000003287520 0.111796185844"
-  rpy: "0 -0.7801056516 0"
+  xyz: "0.000275 0 0.176808"
+  rpy: "0 -0.7767800740 0"

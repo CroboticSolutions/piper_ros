@@ -40,38 +40,38 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
   <!-- Welding gun frame stays identical to link6 so arm_tcp and calibrations keep their
-       values. The gun STL (mm) is modelled lying along -Y: its Ø39 spigot (y 47.8..54,
-       axis x=-5.85, z=28.5) sits in the flange recess, face y=47.8 on the flange top
-       (z=10.5 mm); the wire bend points to link6 +X, which matches the 2026-10-05 TCP
-       calibration within ~3.5 mm. -->
+       values. Torch: WeldTorch_Assembly.stl (mm, 2026-11-24), modelled in the flange
+       frame: its Ø39.8 spigot (z 3.7..7) sits in the flange recess. The STL has the
+       bracket along its +X+Y diagonal; the mesh is turned 135 deg about the flange axis
+       so the bracket points to link6 -X (camera side at joint6 = 0) and the 45.5 deg
+       neck brings the wire tip to (-10.4, 0, 166.3) mm, wire along +X+Z like the old gun.
+       Previous gun: 03_welding_gun.stl (see git history). -->
   <link name="piper_welding_gun">
     <visual>
-      <origin xyz="0.00585 -0.0285 0.0583" rpy="-1.5707963268 0 0"/>
-      <geometry><mesh filename="package://piper_description/meshes/welding_gun/03_welding_gun.stl" scale="0.001 0.001 0.001"/></geometry>
+      <origin xyz="0 0 0" rpy="0 0 2.3561944902"/>
+      <geometry><mesh filename="package://piper_description/meshes/welding_gun/WeldTorch_Assembly.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="piper_gun_metal"><color rgba="0.35 0.38 0.42 1"/></material>
     </visual>
-    <!-- Gun body + wire tip checked in sim and on the real robot (user request 2026-11-17;
-         2026-10-05 to 2026-11-17 the real robot had no gun collision). -->
+    <!-- Gun body + wire tip checked in sim and on the real robot (user request 2026-11-17). -->
     <collision>
-      <origin xyz="0.00585 -0.0285 0.0583" rpy="-1.5707963268 0 0"/>
-      <geometry><mesh filename="package://piper_description/meshes/welding_gun/03_welding_gun.stl" scale="0.001 0.001 0.001"/></geometry>
+      <origin xyz="0 0 0" rpy="0 0 2.3561944902"/>
+      <geometry><mesh filename="package://piper_description/meshes/welding_gun/WeldTorch_Assembly.stl" scale="0.001 0.001 0.001"/></geometry>
     </collision>
     <!-- Approximate prototype dynamics; no measured mass supplied with STL. -->
     <inertial>
-      <origin xyz="0.004 0 0.04"/>
+      <origin xyz="-0.05 0 0.06"/>
       <mass value="0.35"/>
       <inertia ixx="0.0008" ixy="0" ixz="0" iyy="0.0008" iyz="0" izz="0.0003"/>
     </inertial>
   </link>
-  <!-- Real robot only: gun 1.048 mm further out along the flange axis (link6 z), so the
-       CAD wire tip touching the table reads z = -20.0 mm (base on a 2 cm plate); measured
-       2026-10-14 at joints (-0.009, 1.599, -0.002, 0.064, -0.733, 0). Simulation keeps the CAD mount. -->
-  <xacro:property name="gun_mount_z" value="${0.001048 if '$(arg simulation)' == 'false' else 0.0}"/>
+  <!-- The 1.048 mm real-robot offset measured 2026-10-14 belonged to 03_welding_gun;
+       the new torch uses the CAD mount until its TCP is calibrated. -->
+  <xacro:property name="gun_mount_z" value="0.0"/>
   <joint name="piper_welding_gun_mount" type="fixed">
     <parent link="piper_flange"/><child link="piper_welding_gun"/>
     <origin xyz="0 0 ${gun_mount_z}" rpy="0 0 0"/>
   </joint>
-  <!-- Nominal CAD wire-tip TCP, applied 2026-09-30. TCP +X follows the wire. -->
+  <!-- Wire-tip TCP. TCP +X follows the wire. -->
   <link name="arm_tcp"/>
   <!-- Welding-gun TCP (real + sim origin). Launch files pass the robot's active
        ~/.ros/calibration/<robot_id>/welding_gun_tcp/current.yaml; the repo default
